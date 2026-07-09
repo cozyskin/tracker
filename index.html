@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#7c3aed" />
+  <title>문제성 피부 2주 관리 기록</title>
+  <style>
+    :root{
+      --bg:#f7f9ff;--card:#ffffff;--ink:#111827;--muted:#6b7280;--line:#e6eaf2;
+      --accent:#7c3aed;--accent2:#3b82f6;--blue:#3b82f6;--yellow:#f59e0b;--red:#ef4444;--green:#22c55e;
+      --orange:#f97316;--purple:#7c3aed;--shadow:0 14px 34px rgba(72,84,128,.12);--radius:22px;
+    }
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 0% 0%,#eff6ff 0,#ffffff 38%,#fff7ed 100%);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.5}
+    .app{max-width:480px;margin:0 auto;min-height:100vh;padding:18px 16px 96px}.top{padding:18px 4px 10px}.eyebrow{font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.04em}.title{font-size:28px;font-weight:900;line-height:1.15;margin:8px 0 8px}.sub{font-size:14px;color:var(--muted);margin:0}.card{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin:14px 0}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.bigday{font-size:23px;font-weight:900}.small{font-size:13px;color:var(--muted)}.progress{height:12px;background:#edf0f6;border-radius:999px;overflow:hidden;margin:12px 0 8px}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:999px;transition:.25s}.btn{width:100%;border:0;border-radius:16px;background:var(--accent);color:#fff;font-weight:800;font-size:16px;padding:15px 16px;margin-top:12px;cursor:pointer}.btn.secondary{background:#f3f0ff;color:var(--accent)}.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--accent)}.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,250,245,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(12px);z-index:20}.tab{border:0;background:transparent;color:var(--muted);font-size:11px;font-weight:800;padding:6px 0;border-radius:14px}.tab span{display:block;font-size:20px;line-height:1.1}.tab.active{background:#f3f0ff;color:var(--accent)}.view{display:none}.view.active{display:block}.daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.daybtn{border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 0;font-weight:900;color:var(--muted)}.daybtn.done{background:#eef4ed;color:var(--green);border-color:#d6e4d5}.daybtn.current{background:#f5f3ff;color:var(--accent);border:2px solid var(--accent)}.daybtn.locked{background:#f3eee8;color:#b7aaa0;cursor:not-allowed;opacity:.72}.daybtn.active{background:var(--accent);color:#fff}.section-title{font-size:18px;font-weight:900;margin:0 0 12px}.check{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;margin:9px 0}.check input{width:20px;height:20px;accent-color:var(--accent)}.choiceGroup{margin:16px 0}.choiceTitle{font-weight:900;margin-bottom:8px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.choice{border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 6px;text-align:center;font-weight:800;color:var(--muted);cursor:pointer}.choice.selected{border:2px solid var(--accent);color:var(--ink);background:#f5f3ff}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px}.blue{background:var(--blue)}.yellow{background:var(--yellow)}.red{background:var(--red)} .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 12px;font-weight:800;color:var(--muted);cursor:pointer}.chip.selected{background:#f5f3ff;border:2px solid var(--accent);color:var(--ink)}textarea{width:100%;min-height:92px;border:1px solid var(--line);border-radius:16px;padding:13px;background:#fff;font-size:15px;resize:vertical} .toast{display:none;margin-top:12px;padding:12px;border-radius:15px;background:#eef4ed;color:#426742;font-weight:800}.guideBox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:12px}.guideBox h4{margin:0 0 8px}.table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:14px}.table th{color:var(--muted);font-size:12px;text-align:center}.table td{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px;text-align:center}.table td:first-child{border-left:1px solid var(--line);border-radius:14px 0 0 14px;font-weight:900}.table td:last-child{border-right:1px solid var(--line);border-radius:0 14px 14px 0}.pill{display:inline-flex;align-items:center;justify-content:center;min-width:34px;border-radius:999px;padding:4px 8px;font-weight:900;background:#f3f0ff}.metric{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:12px 0}.metric strong{font-size:16px}.miniBar{grid-column:1/3;height:10px;background:#edf0f6;border-radius:999px;overflow:hidden}.miniBar i{display:block;height:100%;background:var(--accent);border-radius:999px}.photoGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.photoSlot{background:#fff;border:1px dashed #d8ddea;border-radius:18px;min-height:112px;padding:8px;text-align:center;overflow:hidden}.photoSlot img{width:100%;height:74px;object-fit:cover;border-radius:12px;display:block;margin-bottom:6px}.photoSlot label{font-size:12px;font-weight:900;color:var(--accent);cursor:pointer}.photoSlot input{display:none}.photoMeta{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:6px}.photoMeta select{max-width:96px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:6px;font-size:12px}.tinyBtn{border:0;background:#f3f0ff;color:var(--accent);border-radius:10px;padding:6px 8px;font-size:12px;font-weight:900}.photoHelp{font-size:12px;color:var(--muted);line-height:1.55;margin:8px 0 12px}.timeline{display:block}.timelineDay{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;margin:10px 0}.timelineImgs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.timelineImgs img{width:100%;height:128px;object-fit:cover;border-radius:12px;cursor:pointer}.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.compareBox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;text-align:center;min-height:160px}.compareBox img{width:100%;height:120px;object-fit:cover;border-radius:14px}.empty{color:var(--muted);font-size:13px;padding:42px 0}.photoTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.photoTab{border:1px solid var(--line);background:#fff;border-radius:14px;padding:11px;font-weight:900;color:var(--muted)}.photoTab.active{background:#f5f3ff;border:2px solid var(--accent);color:var(--ink)}.partButtons{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.partBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-weight:900;color:var(--muted)}.partBtn.active{background:#f5f3ff;border:2px solid var(--accent);color:var(--ink)}.sliderWrap{position:relative;border-radius:18px;overflow:hidden;background:#fff;border:1px solid var(--line);height:300px;touch-action:none}.sliderWrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.sliderWrap .afterImg{clip-path:inset(0 0 0 50%)}.sliderLine{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.12);z-index:4}.sliderHandle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--accent);z-index:5;box-shadow:var(--shadow)}.compareLabels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 10px}.compareLabels .labelBox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px;text-align:center;font-weight:900}.photoSlot.addSlot{display:flex;align-items:center;justify-content:center;min-height:112px;flex-direction:column}.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}.lightbox.active{display:flex}.lightboxContent{max-width:96vw;max-height:86vh;text-align:center;color:#fff}.lightboxContent img{max-width:100%;max-height:76vh;border-radius:18px}.lightboxMeta{margin-top:10px;font-weight:800}.closeLightbox{position:fixed;right:18px;top:18px;background:#fff;border:0;border-radius:999px;width:42px;height:42px;font-weight:900}
+.reportTimeline{overflow-x:auto;padding-bottom:4px}.timelineGrid{min-width:420px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.timelineRow{display:grid;grid-template-columns:72px repeat(14,1fr);border-top:1px solid var(--line)}.timelineRow:first-child{border-top:0}.timelineHead{background:#f8faff;color:var(--muted);font-size:11px;font-weight:900;text-align:center;padding:8px 2px}.timelineLabel{display:flex;align-items:center;padding:8px 10px;font-weight:900;border-right:1px solid var(--line);background:#f8faff}.timelineCell{min-height:28px;display:flex;align-items:center;justify-content:center;border-right:1px solid #edf0f6}.timelineCell:last-child{border-right:0}.colorBlock{width:22px;height:22px;border-radius:7px;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}.colorBlock.empty{background:#eef1f6;box-shadow:none}.statusGood{background:var(--green)}.statusCaution{background:var(--yellow)}.statusCheck{background:var(--red)}.statusInfo{background:var(--blue)}.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.legendItem{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 9px;display:inline-flex;gap:5px;align-items:center}.legendDot{width:10px;height:10px;border-radius:50%;display:inline-block}.summaryStats{display:grid;gap:10px}.summaryCard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px}.summaryCard h4{margin:0 0 10px}.statRow{display:grid;grid-template-columns:58px 1fr 32px;gap:8px;align-items:center;margin:8px 0;font-size:13px}.statBar{height:10px;background:#edf0f6;border-radius:999px;overflow:hidden}.statBar i{display:block;height:100%;border-radius:999px}.reportNote{font-size:12px;color:var(--muted);margin:10px 0 0}.lockedComment{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;color:var(--muted);font-weight:800}
+.notice{font-size:12px;color:var(--muted);background:#f3f0ff;border-radius:14px;padding:11px;margin-top:12px}.installTip{display:none}.reset{font-size:13px;color:var(--muted);text-align:center;margin-top:12px;text-decoration:underline;cursor:pointer}
+.copyright{font-size:11px;color:#9ca3af;text-align:center;margin-top:12px;font-weight:700;letter-spacing:.03em}
+  
+.routineCard{background:linear-gradient(135deg,#f5f3ff,#eff6ff);border:1px solid #ddd6fe;border-radius:22px;padding:18px;margin:12px 0 18px;box-shadow:0 12px 30px rgba(124,58,237,.10)}
+.routineTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.routineLabel{font-weight:900;color:var(--accent);font-size:15px}.routineDay{font-size:30px;font-weight:950;color:var(--ink)}.routineDay b{color:var(--accent)}.routineMeta{text-align:right;font-size:13px;color:var(--muted);font-weight:800}.routineSegments{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin:10px 0}.routineSegments span{height:12px;border-radius:999px;background:#e5e7eb}.routineSegments span.filled{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.timelineGrid{min-width:520px}.timelineRow{grid-template-columns:76px repeat(14,1fr)}.timelineLabel{gap:5px}.timelineCell{min-height:39px}.colorBlock{width:28px;height:28px;border-radius:8px;box-shadow:0 5px 12px rgba(15,23,42,.10)}.statusGood{background:linear-gradient(135deg,#34d399,#22c55e)}.statusCaution{background:linear-gradient(135deg,#fbbf24,#f59e0b)}.statusCheck{background:linear-gradient(135deg,#fb7185,#ef4444)}.statusInfo{background:linear-gradient(135deg,#60a5fa,#3b82f6)}.summaryStats{display:grid;gap:12px}.summaryCard{background:linear-gradient(180deg,#fff,#fbfcff);border:1px solid #e6eaf2;border-radius:20px;padding:16px;box-shadow:0 10px 24px rgba(72,84,128,.06)}.summaryCard h4{font-size:16px;display:flex;align-items:center;gap:6px}.statRow{grid-template-columns:58px 1fr 52px}.statBar{height:12px;background:#e9edf5}.lifestyleCards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.lifeCard{background:#fff;border:1px solid #e6eaf2;border-radius:18px;padding:14px;text-align:center;box-shadow:0 8px 20px rgba(72,84,128,.06)}.lifeCard .lifeIcon{font-size:25px;display:block;margin-bottom:4px}.lifeCard strong{display:block;font-size:13px;color:var(--muted);margin-bottom:3px}.lifeCard b{font-size:22px;color:var(--accent)}@media (min-width:520px){.summaryStats{grid-template-columns:repeat(3,1fr)}.lifestyleCards{grid-template-columns:repeat(5,1fr)}}
+
+/* Compact mobile report timeline - centered square chips */
+.reportTimeline{overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.timelineGrid{min-width:0;width:100%;border:1px solid #e6eaf2;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 8px 20px rgba(72,84,128,.05)}
+.timelineRow{display:grid;grid-template-columns:58px repeat(14,minmax(0,1fr));border-top:1px solid #edf0f6}
+.timelineRow:first-child{border-top:0}
+.timelineHead{height:26px;background:#fbfcff;color:#172033;font-size:11px;font-weight:900;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1;border-right:1px solid #edf0f6}
+.timelineHead:last-child{border-right:0}
+.timelineLabel{height:26px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px;font-size:11px;font-weight:900;line-height:1;border-right:1px solid #edf0f6;background:#fbfcff;white-space:nowrap;color:#172033}
+.timelineCell{height:26px;min-height:0;display:flex;align-items:center;justify-content:center;border-right:1px solid #edf0f6;background:#fff;padding:0}
+.timelineCell:last-child{border-right:0}
+.colorBlock{width:16px;height:16px;aspect-ratio:1/1;border-radius:5px;display:block;margin:auto;box-shadow:none;flex:0 0 16px}
+.colorBlock.empty{width:auto;height:auto;background:transparent;box-shadow:none;color:#1f2a44;font-size:12px;font-weight:900;flex:0 0 auto}
+.timelineLegend{display:none}
+@media (max-width:430px){
+  .timelineRow{grid-template-columns:52px repeat(14,minmax(0,1fr))}
+  .timelineHead{height:24px;font-size:10px}
+  .timelineLabel{height:24px;font-size:10px;padding:0 1px}
+  .timelineCell{height:24px}
+  .colorBlock{width:15px;height:15px;flex-basis:15px;border-radius:4px}
+  .colorBlock.empty{font-size:11px}
+}
+@media (max-width:380px){
+  .timelineRow{grid-template-columns:48px repeat(14,minmax(0,1fr))}
+  .timelineHead{height:23px;font-size:9px}
+  .timelineLabel{height:23px;font-size:9px}
+  .timelineCell{height:23px}
+  .colorBlock{width:14px;height:14px;flex-basis:14px;border-radius:4px}
+}
+
+
+/* Final compact report timeline + summary */
+.statusGood{background:linear-gradient(135deg,#60a5fa,#3b82f6)!important}
+.statusCaution{background:linear-gradient(135deg,#fbbf24,#f59e0b)!important}
+.statusCheck{background:linear-gradient(135deg,#fb7185,#ef4444)!important}
+
+.timelineGrid{width:100%;border-radius:13px}
+.timelineRow{grid-template-columns:48px repeat(14,minmax(0,1fr))}
+.timelineHead{height:21px;font-size:9px;padding:0}
+.timelineLabel{height:21px;font-size:9px;padding:0;justify-content:center;text-align:center}
+.timelineCell{height:21px;padding:0}
+.colorBlock{width:13px!important;height:13px!important;flex:0 0 13px!important;border-radius:4px!important;aspect-ratio:1/1;box-shadow:none!important}
+.colorBlock.empty{width:13px!important;height:13px!important;flex:0 0 13px!important;background:transparent!important;color:transparent!important;font-size:0!important}
+.reportTimeline + .small{font-size:11px!important;margin-top:7px!important}
+.summaryStats{gap:8px!important}
+.summaryCard{border-radius:14px!important;padding:10px!important;box-shadow:0 5px 14px rgba(72,84,128,.045)!important}
+.summaryCard h4{font-size:13px!important;margin:0 0 7px!important;gap:0!important}
+.statRow{grid-template-columns:42px 1fr 38px!important;gap:6px!important;margin:6px 0!important;font-size:11px!important}
+.statRow span{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.legendDot{width:8px!important;height:8px!important;flex:0 0 8px!important}
+.statBar{height:8px!important}
+.statRow b{font-size:11px!important;text-align:right;white-space:nowrap}
+.reportNote{font-size:10.5px!important;margin-top:7px!important}
+@media (max-width:380px){
+  .timelineRow{grid-template-columns:45px repeat(14,minmax(0,1fr))}
+  .timelineHead,.timelineLabel,.timelineCell{height:20px}
+  .timelineLabel,.timelineHead{font-size:8.5px}
+  .colorBlock{width:12px!important;height:12px!important;flex-basis:12px!important}
+  .statRow{grid-template-columns:39px 1fr 34px!important;font-size:10.5px!important}
+}
+
+
+/* User final adjustments: smaller routine, larger timeline, centered compact summary */
+.routineCard{padding:12px 14px!important;margin:8px 0 12px!important;border-radius:18px!important;box-shadow:0 8px 20px rgba(124,58,237,.08)!important}
+.routineTop{align-items:flex-start!important;margin-bottom:8px!important;gap:8px!important}
+.routineLabel{text-align:left!important;font-size:13px!important;line-height:1.2!important}
+.routineDay{font-size:22px!important;line-height:1.15!important;text-align:left!important}
+.routineMeta{font-size:11px!important;line-height:1.35!important}
+.routineSegments{gap:2px!important;margin:8px 0 2px!important}
+.routineSegments span{height:8px!important}
+
+.timelineGrid{width:100%!important;max-width:100%!important;border-radius:14px!important}
+.timelineRow{grid-template-columns:42px repeat(14,minmax(0,1fr))!important}
+.timelineHead{height:25px!important;font-size:10px!important}
+.timelineLabel{height:25px!important;font-size:9.5px!important;padding:0!important;justify-content:center!important;text-align:center!important;white-space:nowrap!important}
+.timelineCell{height:25px!important;min-height:0!important;padding:0!important}
+.colorBlock{width:15px!important;height:15px!important;flex:0 0 15px!important;border-radius:5px!important;aspect-ratio:1/1!important;display:block!important;margin:auto!important}
+.colorBlock.empty{width:15px!important;height:15px!important;flex:0 0 15px!important;background:transparent!important;color:transparent!important;font-size:0!important;box-shadow:none!important}
+
+.compactSummary .summaryStats{gap:7px!important}
+.compactSummary .summaryCard{text-align:center!important;padding:9px 8px!important;border-radius:13px!important}
+.compactSummary .summaryCard h4{justify-content:center!important;text-align:center!important;font-size:12.5px!important;margin:0 0 7px!important}
+.compactSummary .statRow{grid-template-columns:38px 1fr 26px!important;gap:5px!important;margin:5px 0!important;font-size:10.5px!important}
+.compactSummary .statRow span{justify-content:flex-start!important;text-align:left!important;gap:4px!important}
+.compactSummary .statRow b{font-size:10.5px!important;text-align:right!important}
+.compactSummary .reportNote{text-align:center!important;font-size:10px!important;margin-top:6px!important}
+.compactSummary > .reportNote{text-align:center!important}
+
+@media (max-width:380px){
+  .timelineRow{grid-template-columns:40px repeat(14,minmax(0,1fr))!important}
+  .timelineHead,.timelineLabel,.timelineCell{height:24px!important}
+  .timelineLabel,.timelineHead{font-size:8.5px!important}
+  .colorBlock{width:14px!important;height:14px!important;flex-basis:14px!important}
+  .compactSummary .statRow{grid-template-columns:36px 1fr 24px!important;font-size:10px!important}
+}
+
+/* Today changes - horizontal compact row */
+.lifestyleCards{
+  display:grid !important;
+  grid-template-columns:repeat(5,1fr) !important;
+  gap:6px !important;
+  align-items:stretch;
+}
+.lifeCard{
+  border-radius:14px !important;
+  padding:8px 3px !important;
+  min-height:74px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 5px 14px rgba(72,84,128,.05) !important;
+}
+.lifeCard .lifeIcon{
+  font-size:18px !important;
+  line-height:1;
+  margin-bottom:3px !important;
+}
+.lifeCard strong{
+  font-size:10px !important;
+  line-height:1.15;
+  min-height:22px;
+  display:flex !important;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  word-break:keep-all;
+  margin-bottom:1px !important;
+}
+.lifeCard b{
+  font-size:15px !important;
+  line-height:1.1;
+}
+@media (max-width:390px){
+  .lifestyleCards{gap:4px !important;}
+  .lifeCard{padding:7px 2px !important;min-height:70px;}
+  .lifeCard .lifeIcon{font-size:17px !important;}
+  .lifeCard strong{font-size:9px !important;}
+  .lifeCard b{font-size:14px !important;}
+}
+
+.dayDetailModal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:none;align-items:flex-end;justify-content:center;z-index:998;padding:16px}
+.dayDetailModal.active{display:flex}
+.dayDetailBox{width:100%;max-width:480px;max-height:82vh;overflow:auto;background:#fff;border-radius:24px;padding:18px;box-shadow:0 18px 42px rgba(15,23,42,.24)}
+.dayDetailTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.dayDetailTop h3{margin:0;font-size:20px;font-weight:950}
+.dayDetailDate{display:inline-flex;align-items:center;gap:6px;background:#f8faff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;margin:0 0 12px;color:var(--muted);font-size:12px;font-weight:900}
+.closeDetail{border:0;background:#f3f0ff;color:var(--accent);border-radius:999px;width:34px;height:34px;font-weight:950;font-size:18px}
+.detailSection{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.detailGrid{display:grid;grid-template-columns:96px 1fr;gap:8px 10px;font-size:14px}
+.detailGrid b{color:var(--muted)}
+.detailChecks{display:grid;gap:8px}.detailCheck{display:flex;align-items:center;gap:8px;background:#f8faff;border:1px solid var(--line);border-radius:14px;padding:9px 10px;font-weight:800}.detailCheck.done{color:var(--green)}.detailCheck.missed{color:#a8b0bd}.detailCheck.missed .routineMark{color:#b8bdc7;font-weight:950}.detailCheck.done .routineMark{color:var(--green);font-weight:950}
+.detailChips{display:flex;flex-wrap:wrap;gap:7px}.detailChip{background:#f5f3ff;color:var(--accent);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900}
+.detailMemo{background:#f8faff;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:13px;color:var(--ink);white-space:pre-wrap}
+.detailPhotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.detailPhotos img{width:100%;height:86px;object-fit:cover;border-radius:12px;cursor:pointer}.timelineCell.clickable{cursor:pointer}
+
+
+/* 14일 요약 통계 안내 문구 왼쪽 정렬 */
+.summaryStats + .reportNote{
+  text-align:left !important;
+}
+
+
+/* 기록표 Day 숫자 가운데 정렬 */
+.table td:first-child{
+  text-align:center !important;
+}
+
+
+/* Timeline circle dots update - blue/yellow/red circles */
+.reportTimeline .timelineCell{
+  background:#fff !important;
+}
+.reportTimeline .colorBlock{
+  width:14px !important;
+  height:14px !important;
+  flex:0 0 14px !important;
+  border-radius:50% !important;
+  aspect-ratio:1/1 !important;
+  display:block !important;
+  margin:auto !important;
+  box-shadow:0 2px 6px rgba(15,23,42,.10) !important;
+}
+.reportTimeline .colorBlock.statusGood{
+  background:#3b82f6 !important;
+}
+.reportTimeline .colorBlock.statusCaution{
+  background:#f59e0b !important;
+}
+.reportTimeline .colorBlock.statusCheck{
+  background:#ef4444 !important;
+}
+.reportTimeline .colorBlock.empty{
+  width:14px !important;
+  height:14px !important;
+  flex:0 0 14px !important;
+  border-radius:50% !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:transparent !important;
+  font-size:0 !important;
+}
+@media (max-width:380px){
+  .reportTimeline .colorBlock,
+  .reportTimeline .colorBlock.empty{
+    width:13px !important;
+    height:13px !important;
+    flex-basis:13px !important;
+  }
+}
+
+
+/* Result snapshot and photo compare date labels */
+.resultSnapshot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.resultCard{background:linear-gradient(180deg,#fff,#fbfcff);border:1px solid var(--line);border-radius:15px;padding:11px 6px;text-align:center}
+.resultCard strong{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.resultCard b{display:block;font-size:17px;color:var(--accent);line-height:1.1}
+.resultCard span{display:block;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.25}
+.nextPlanList{display:grid;gap:8px;margin-top:10px}
+.nextPlanItem{background:#f8faff;border:1px solid var(--line);border-radius:14px;padding:10px 11px;font-size:12.5px;line-height:1.45;color:var(--ink);font-weight:700}
+.compareLabels .labelBox{line-height:1.25}
+.compareDateLabels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 0}
+.compareDateLabels .dateBox{background:#f8faff;border:1px solid var(--line);border-radius:13px;padding:8px;text-align:center;font-size:12px;font-weight:900;color:var(--muted)}
+@media (max-width:380px){.resultSnapshot{gap:6px}.resultCard{padding:9px 4px}.resultCard b{font-size:15px}.compareDateLabels .dateBox{font-size:11px;padding:7px 4px}}
+
+/* Report memo list - internal scroll */
+.memoScroll{
+  max-height:160px;
+  overflow-y:auto;
+  padding:2px 6px 2px 0;
+  -webkit-overflow-scrolling:touch;
+  background:transparent;
+}
+.memoScroll::before,
+.memoScroll::after{display:none!important;content:none!important;}
+.memoLine{
+  display:block;
+  width:100%;
+  margin:0 0 10px;
+  padding:0;
+  border:0;
+  background:transparent;
+  text-align:left;
+  color:var(--muted);
+  font:inherit;
+  line-height:1.55;
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+  max-width:100%;
+}
+.memoLine strong{color:#4b5563;}
+.memoLine:active{opacity:.72}
+.detailMemo{word-break:break-word;overflow-wrap:anywhere;}
+.memoCounter{font-size:12px;color:var(--muted);text-align:right;margin-top:6px;}
+#memo{word-break:break-word;overflow-wrap:anywhere;}
+@media (max-width:380px){.memoScroll{max-height:145px}}
+
+
+/* Photo comparison: before/after first, slider optional */
+.beforeAfterGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.beforeAfterCard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:9px;text-align:center}
+.beforeAfterCard img{width:100%;height:190px;object-fit:cover;border-radius:14px;display:block;cursor:pointer}
+.beforeAfterCard strong{display:block;font-size:13px;margin-top:8px;color:var(--ink)}
+.beforeAfterCard span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+.compareDetailBtn{width:100%;border:0;border-radius:14px;background:#f3f0ff;color:var(--accent);font-weight:900;font-size:14px;padding:12px 14px;margin-top:12px;cursor:pointer}
+.sliderCompareArea{display:none;margin-top:12px}
+.sliderCompareArea.active{display:block}
+@media (max-width:380px){.beforeAfterCard img{height:160px}.beforeAfterGrid{gap:8px}.beforeAfterCard{padding:7px}}
+
+/* Horizontal photo record cards */
+.photoRecordScroll{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  overflow-x:auto;
+  padding:4px 2px 8px;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+}
+.photoRecordCard{
+  flex:0 0 78%;
+  max-width:310px;
+  scroll-snap-align:start;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 8px 20px rgba(72,84,128,.06);
+}
+.photoRecordTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
+.photoRecordTop strong{font-size:15px;font-weight:950}
+.photoRecordTop span{font-size:11px;color:var(--muted);font-weight:800}
+.photoRecordImgs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.photoRecordImgs img{width:100%;height:112px;object-fit:cover;border-radius:12px;cursor:pointer;display:block}
+.photoRecordParts{font-size:11px;color:var(--muted);line-height:1.4;margin-top:8px;word-break:keep-all}
+.photoRecordHint{font-size:11px;color:var(--muted);margin:8px 0 0;text-align:center}
+@media (max-width:380px){.photoRecordCard{flex-basis:82%;padding:10px}.photoRecordImgs img{height:98px}}
+.compareEmptyBox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:10px}
+.compareEmptyBox img{width:100%;max-height:220px;object-fit:cover;border-radius:14px;display:block;margin-top:10px;cursor:pointer}
+.emptyCompareCard .empty{padding:38px 8px;color:var(--muted);font-size:13px;line-height:1.55}
+.emptyCompareCard{
+  min-height:264px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.emptyCompareCard strong,
+.emptyCompareCard span{
+  width:100%;
+  text-align:center;
+}
+.emptyCompareCard strong{margin-top:0!important;}
+
+
+/* Readability update: mobile report small labels +1px */
+.reportTimeline .timelineLabel{
+  font-size:10.5px !important;
+}
+.compactSummary .statRow span{
+  font-size:11.5px !important;
+}
+.compactSummary .summaryCard .reportNote{
+  font-size:11px !important;
+}
+.lifeCard strong{
+  font-size:11px !important;
+}
+@media (max-width:380px){
+  .reportTimeline .timelineLabel{font-size:9.5px !important;}
+  .compactSummary .statRow span{font-size:11px !important;}
+  .compactSummary .summaryCard .reportNote{font-size:10.5px !important;}
+  .lifeCard strong{font-size:10px !important;}
+}
+
+
+/* Final text + mobile readability updates */
+.photoHelp .photoMax,
+.photoHelp .photoTipText{
+  font-size:13px !important;
+}
+.photoHelp .photoTipTitle{
+  font-size:12px !important;
+}
+#guide > .card > .small,
+#guide .guideBox .small{
+  font-size:14px !important;
+  line-height:1.65 !important;
+}
+.reportGuideText,
+.compareGuideText{
+  font-size:13px !important;
+}
+.emptyCompareCard span{
+  font-size:12px !important;
+  line-height:1.45 !important;
+  padding:0 6px;
+}
+
+
+/* Unified report guide text: same size, color, weight, line-height, spacing */
+#report .reportInfoText{
+  font-size:10.5px !important;
+  color:var(--muted) !important;
+  font-weight:400 !important;
+  line-height:1.55 !important;
+  margin:7px 0 0 !important;
+}
+
+
+/* Popup photo comparison modal */
+
+body.modalLocked{position:fixed;width:100%;overflow:hidden;}
+
+.compareModal{position:fixed;inset:0;background:rgba(15,23,42,.52);display:none;align-items:center;justify-content:center;z-index:997;padding:16px}
+.compareModal.active{display:flex}
+.compareModalBox{width:100%;max-width:480px;max-height:88vh;overflow:auto;background:#fff;border-radius:24px;padding:16px;box-shadow:0 18px 42px rgba(15,23,42,.25)}
+.compareModalTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.compareModalTop h3{margin:0;font-size:18px;font-weight:950;color:var(--ink)}
+.closeCompareModal{border:0;background:#f3f0ff;color:var(--accent);border-radius:999px;width:36px;height:36px;font-size:18px;font-weight:950;cursor:pointer}
+.compareModal .sliderWrap{height:360px}
+.compareModal .compareLabels{margin-bottom:10px}
+.compareModal .compareGuideText{font-size:12px;color:var(--muted);line-height:1.45;text-align:center;margin:9px 0 0}
+@media (max-width:380px){.compareModal{padding:12px}.compareModalBox{padding:14px;border-radius:22px}.compareModal .sliderWrap{height:330px}.compareModalTop h3{font-size:17px}}
+
+</style>
+</head>
+<body>
+  <main class="app">
+    <section class="top">
+      <div class="eyebrow">2 WEEK SKIN TRACKER</div>
+      <h1 class="title">문제성 피부<br/>2주 관리 기록</h1>
+      <p class="sub">2주 동안 피부 변화를 기록하며 내 피부 상태를 꾸준히 확인해보세요.<br/>작은 변화도 꾸준히 기록하면 나에게 맞는 관리 방향을 찾는 데 도움이 됩니다.</p>
+    </section>
+
+    <section id="home" class="view active">
+      <div class="card">
+        <div class="row"><div><div class="small">진행 현황</div><div class="bigday" id="todayText">Day 0 / 14</div></div><div class="pill" id="leftText">14일 남음</div></div>
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+        <div class="small" id="progressText">0 / 14일 완료</div>
+        <button class="btn" onclick="goRecordToday()">오늘 기록하기</button>
+        <button class="btn secondary" onclick="showView('report')">리포트 보기</button>
+      </div>
+      <div class="card">
+        <h3 class="section-title">사용 전 안내</h3>
+        <p class="small">이 앱은 피부를 진단하는 것이 아니라, 기록한 내용을 바탕으로 피부 상태와 관리 방향을 점검하는 셀프 관리 앱입니다.</p>
+        <div class="notice">기록은 현재 사용 중인 브라우저에 저장됩니다. 같은 기기와 브라우저에서는 계속 확인할 수 있습니다. 브라우저 데이터를 삭제하거나 다른 기기에서 접속하면 기존 기록은 표시되지 않을 수 있습니다.</div><div class="copyright">ⓒ 2026 COZY</div>
+      </div>
+    </section>
+
+    <section id="record" class="view">
+      <div class="card"><h3 class="section-title" id="recordTitle">Day 1 / 14</h3><div class="daygrid" id="dayGrid"></div></div>
+      <div class="card">
+        <h3 class="section-title">오늘의 루틴</h3>
+        <label class="check"><input type="checkbox" id="c1"> 클렌징 루틴 1</label>
+        <label class="check"><input type="checkbox" id="c2"> 클렌징 루틴 2</label>
+        <label class="check"><input type="checkbox" id="c3"> 기초 케어 루틴</label>
+        <h3 class="section-title" style="margin-top:18px">피부 기록</h3>
+        <div class="choiceGroup"><div class="choiceTitle">트러블</div><div class="choices" data-key="trouble"><button class="choice" data-val="감소"><span class="dot blue"></span>감소</button><button class="choice" data-val="유지"><span class="dot yellow"></span>유지</button><button class="choice" data-val="증가"><span class="dot red"></span>증가</button></div></div>
+        <div class="choiceGroup"><div class="choiceTitle">유수분</div><div class="choices" data-key="balance"><button class="choice" data-val="균형"><span class="dot blue"></span>균형</button><button class="choice" data-val="번들"><span class="dot yellow"></span>번들</button><button class="choice" data-val="건조"><span class="dot red"></span>건조</button></div></div>
+        <div class="choiceGroup"><div class="choiceTitle">민감도</div><div class="choices" data-key="sensitive"><button class="choice" data-val="없음"><span class="dot blue"></span>없음</button><button class="choice" data-val="경미"><span class="dot yellow"></span>경미</button><button class="choice" data-val="심함"><span class="dot red"></span>심함</button></div></div>
+        <div class="choiceGroup"><div class="choiceTitle">만족도</div><div class="choices" data-key="satisfaction"><button class="choice" data-val="낮음">낮음</button><button class="choice" data-val="보통">보통</button><button class="choice" data-val="좋음">좋음</button></div></div>
+        <div class="choiceGroup"><div class="choiceTitle">생활 요인</div><div class="chips" id="lifestyleChips"><button class="chip" data-val="수면 부족">🌙 수면 부족</button><button class="chip" data-val="수분 부족">💧 수분 부족</button><button class="chip" data-val="스트레스">⚡ 스트레스</button><button class="chip" data-val="음주">🍺 음주</button><button class="chip" data-val="자극적인 음식">🍔 자극적인 음식</button></div></div>
+        <div class="choiceTitle">나의 기록</div><textarea id="memo" maxlength="300" oninput="updateMemoCounter()" placeholder="오늘 피부 변화나 느낀 점, 남기고 싶은 말을 자유롭게 기록해보세요.
+예) 마스크 장시간 착용 후 여드름 생김, 생리 시작, 새로운 제품 사용, 피부를 자주 만짐"></textarea><div class="memoCounter" id="memoCounter">0 / 300</div>
+        <button class="btn" onclick="saveDay()">저장하기</button><div class="toast" id="toast">저장 완료</div>
+      </div>
+      <div class="card"><h3 class="section-title">사진 기록</h3><p class="photoHelp"><strong class="photoMax">사진은 최대 5장까지 추가할 수 있습니다.</strong><br/><br/><strong class="photoTipTitle">📷 촬영 팁</strong><br/><span class="photoTipText">피부 변화를 정확하게 비교하려면 각도, 장소, 조명, 촬영 거리를 최대한 일정하게 유지해주세요. 사진 비교 화면에서 잘리지 않도록 적절한 거리를 유지해 촬영하는 것이 좋습니다.</span></p><div class="photoGrid" id="photoGrid"></div></div>
+    </section>
+
+    <section id="guide" class="view"><div class="card"><h3 class="section-title">💡 관리 점검 가이드</h3><p class="small" style="margin:0 0 12px">피부 변화를 기록하면서 함께 확인해볼 수 있는 관리 참고 가이드입니다.</p><div class="guideBox"><p class="small"><strong>세안 직후 당김·자극</strong> → 세정 강도가 강하지 않았는지 확인해보세요.</p><p class="small"><strong>세안 후 답답함</strong> → 세정력 부족 또는 클렌저 잔여감을 확인해보세요.</p><p class="small"><strong>속건조 + 겉번들</strong> → 피부가 수분 부족 상태는 아닌지 확인해보세요.</p><p class="small"><strong>기초 제품 사용 후 답답함·번들거림</strong> → 사용량이나 제품이 피부에 맞는지 점검해보세요.</p><p class="small"><strong>시간이 지나며 트러블 증가</strong> → 최근 사용한 제품이나 생활 습관의 변화를 함께 확인해보세요.</p><p class="small"><strong>갑작스러운 피부 변화</strong> → 날씨, 실내 환경, 수면이나 생활 패턴의 변화도 함께 확인해보세요.</p></div></div></section>
+
+    <section id="report" class="view"><div class="card"><h3 class="section-title">📊 14일 관리 리포트</h3><div id="reportContent"></div><button class="btn secondary" onclick="showView('record')">기록 계속하기</button><div class="reset" onclick="resetAll()">기록 초기화</div></div><div class="card"><h3 class="section-title">사진 비교 및 전체 기록</h3><div class="photoTabs"><button class="photoTab active" id="compareTab" onclick="showPhotoPanel('compare')">사진 비교</button><button class="photoTab" id="timelineTab" onclick="showPhotoPanel('timeline')">전체 기록</button></div><div id="photoComparePanel"><div id="partButtons" class="partButtons"></div><div id="compareArea"></div></div><div id="photoTimelinePanel" style="display:none"><div id="photoTimeline"></div></div></div></section>
+  </main>
+
+  <div class="dayDetailModal" id="dayDetailModal" onclick="closeDayDetail()"><div class="dayDetailBox" onclick="event.stopPropagation()"><div class="dayDetailTop"><h3 id="dayDetailTitle">Day 기록 상세</h3><button class="closeDetail" type="button" onclick="closeDayDetail()">×</button></div><div id="dayDetailContent"></div></div></div>
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()"><button class="closeLightbox" type="button">×</button><div class="lightboxContent" onclick="event.stopPropagation()"><img id="lightboxImg" src="" alt="확대 사진"><div class="lightboxMeta" id="lightboxMeta"></div></div></div>
+  <div class="compareModal" id="compareModal" onclick="closeSliderModal()"><div class="compareModalBox" onclick="event.stopPropagation()"><div class="compareModalTop"><h3 id="compareModalTitle">사진 자세히 비교</h3><button class="closeCompareModal" type="button" onclick="closeSliderModal()">×</button></div><div id="compareModalContent"></div></div></div>
+  <nav class="tabs"><button class="tab active" data-view="home"><span>🏠</span>홈</button><button class="tab" data-view="record"><span>📝</span>기록</button><button class="tab" data-view="report"><span>📈</span>리포트</button><button class="tab" data-view="guide"><span>💡</span>가이드</button></nav>
+<script>
+const KEY='skin14Challenge_v5_photo_tags';let state=JSON.parse(localStorage.getItem(KEY)||'{"selected":1,"days":{}}');
+const vals={trouble:['감소','유지','증가'],balance:['균형','번들','건조'],sensitive:['없음','경미','심함']};
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state));renderAll()}
+function dayData(d){return state.days[d]||{} }
+function isComplete(d){const x=dayData(d);return x.c3&&(x.c1||x.c2)&&x.trouble&&x.balance&&x.sensitive}
+function completed(){let n=0;for(let i=1;i<=14;i++) if(isComplete(i)) n++;return n}
+function today(){for(let i=1;i<=14;i++) if(!isComplete(i)) return i;return 14}
+function isUnlocked(d){return d<=today() || isComplete(d)}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));renderAll()}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
+function goRecordToday(){state.selected=today();showView('record');loadForm()}
+function selectDay(d){if(!isUnlocked(d)){alert('이전 Day를 완료하면 순서대로 열립니다.');return;}state.selected=d;loadForm();renderDayGrid();}
+function updateMemoCounter(){const el=document.getElementById('memo');const counter=document.getElementById('memoCounter');if(el&&counter) counter.textContent=`${el.value.length} / 300`;}
+function loadForm(){let d=dayData(state.selected);document.getElementById('recordTitle').textContent=`Day ${state.selected} / 14`;['c1','c2','c3'].forEach(k=>document.getElementById(k).checked=!!d[k]);document.getElementById('memo').value=d.memo||'';updateMemoCounter();document.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('#lifestyleChips .chip').forEach(b=>b.classList.remove('selected'));['trouble','balance','sensitive','satisfaction'].forEach(k=>{if(d[k]){let el=document.querySelector(`.choices[data-key="${k}"] .choice[data-val="${d[k]}"]`);if(el)el.classList.add('selected')}});(d.lifestyle||[]).forEach(v=>{let el=document.querySelector(`#lifestyleChips .chip[data-val="${v}"]`);if(el)el.classList.add('selected')});renderPhotos()}
+document.querySelectorAll('.choices .choice').forEach(btn=>btn.onclick=()=>{let group=btn.parentElement;group.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');});
+document.querySelectorAll('#lifestyleChips .chip').forEach(btn=>btn.onclick=()=>btn.classList.toggle('selected'));
+function selectedVal(k){let el=document.querySelector(`.choices[data-key="${k}"] .choice.selected`);return el?el.dataset.val:''}
+function selectedLifestyle(){return Array.from(document.querySelectorAll('#lifestyleChips .chip.selected')).map(el=>el.dataset.val)}
+function saveDay(){
+  let d=state.selected;
+  if(!isUnlocked(d)){alert('이전 Day를 완료하면 순서대로 기록할 수 있습니다.');return;}
+  if(!c1.checked&&!c2.checked&&!c3.checked){alert('오늘의 루틴을 먼저 체크해주세요.');return;}
+  if(!c3.checked){alert('기초 케어 루틴을 체크해주세요.');return;}
+  if(!c1.checked&&!c2.checked){alert('클렌징 루틴을 체크해주세요.');return;}
+  if(!selectedVal('trouble')||!selectedVal('balance')||!selectedVal('sensitive')){alert('트러블, 유수분, 민감도를 모두 체크해주세요.');return;}
+  state.days[d]={...dayData(d),c1:c1.checked,c2:c2.checked,c3:c3.checked,trouble:selectedVal('trouble'),balance:selectedVal('balance'),sensitive:selectedVal('sensitive'),satisfaction:selectedVal('satisfaction'),lifestyle:selectedLifestyle(),memo:memo.value.trim().slice(0,300),savedAt:new Date().toISOString()};
+  saveState();
+  document.getElementById('toast').style.display='block';
+  setTimeout(()=>toast.style.display='none',1600);
+  renderHome();renderDayGrid();renderTable();renderReport();
+}
+function renderDayGrid(){let html='', t=today();for(let i=1;i<=14;i++){let locked=!isUnlocked(i);let label=isComplete(i)?'✓':(locked?'🔒':i);html+=`<button class="daybtn ${isComplete(i)?'done':''} ${i===t&&!isComplete(i)?'current':''} ${locked?'locked':''} ${state.selected===i?'active':''}" onclick="selectDay(${i})">${label}</button>`;}document.getElementById('dayGrid').innerHTML=html}
+function renderHome(){let c=completed();todayText.textContent=c>=14?'Day 14 / 14':`Day ${c} / 14`;leftText.textContent=c>=14?'완료':`${14-c}일 남음`;progressBar.style.width=(c/14*100)+'%';progressText.textContent=`${c} / 14일 완료`}
+function mark(val,type){if(!val)return '-';let cls=(val==='감소'||val==='균형'||val==='없음')?'blue':(val==='유지'||val==='번들'||val==='경미')?'yellow':'red';return `<span class="dot ${cls}"></span>${val}`}
+function renderTable(){return;}
+function count(key,val){let n=0;for(let i=1;i<=14;i++) if(dayData(i)[key]===val)n++;return n}
+const lifestyleOptions=['수면 부족','수분 부족','스트레스','음주','자극적인 음식'];
+const lifestyleIcons={'수면 부족':'🌙','수분 부족':'💧','스트레스':'⚡','음주':'🍺','자극적인 음식':'🍔'};
+const lifeLabel=v=>(lifestyleIcons[v]?lifestyleIcons[v]+' ':'')+v;
+function countLifestyleUntil(day,val){let n=0;for(let i=1;i<=day;i++){if((dayData(i).lifestyle||[]).includes(val))n++;}return n}
+function countLifestyle(val){return countLifestyleUntil(14,val)}
+function reportStatusClass(key,val){
+  if(!val) return 'empty';
+  if((key==='trouble'&&val==='감소')||(key==='balance'&&val==='균형')||(key==='sensitive'&&val==='없음')) return 'statusGood';
+  if((key==='trouble'&&val==='유지')||(key==='balance'&&val==='번들')||(key==='sensitive'&&val==='경미')) return 'statusCaution';
+  return 'statusCheck';
+}
+function reportTimeline(){
+  const rows=[['trouble','트러블'],['balance','유수분'],['sensitive','민감도']];
+  const header='<div class="timelineRow"><div class="timelineHead">Day</div>'+Array.from({length:14},(_,i)=>`<div class="timelineHead">${i+1}</div>`).join('')+'</div>';
+  const body=rows.map(([key,label])=>`<div class="timelineRow"><div class="timelineLabel">${label}</div>`+Array.from({length:14},(_,i)=>{const day=i+1;const v=dayData(day)[key];const cls=reportStatusClass(key,v);const content=v?`<span class="colorBlock ${cls}" aria-label="${v}"></span>`:`<span class="colorBlock empty"></span>`;return `<div class="timelineCell ${v?'clickable':''}" title="Day ${day} ${label} ${v||'기록 없음'}" ${v?`onclick="openDayDetail(${day})"`:''}>${content}</div>`}).join('')+'</div>').join('');
+  return `<div class="guideBox"><h4>14일 피부 변화 타임라인</h4><div class="reportTimeline"><div class="timelineGrid">${header}${body}</div></div><p class="small reportGuideText reportInfoText">색상을 누르면 해당 날짜의 기록을 확인할 수 있습니다.</p></div>`;
+}
+function escHtml(str){return String(str||'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
+function detailRow(label,value){return `<b>${label}</b><span>${value||'-'}</span>`;}
+async function openDayDetail(day){
+  const d=dayData(day);
+  dayDetailTitle.textContent=`Day ${day} 기록 상세`;
+  const savedDate=formatPhotoDate(d.savedAt);
+  const dateHtml=savedDate?`<div class="dayDetailDate">기록일 ${savedDate}</div>`:'';
+  const routineItem=(done,label)=>`<div class="detailCheck ${done?'done':'missed'}"><span class="routineMark">${done?'✓':'✕'}</span> ${label}</div>`;
+  const routineHtml=`<div class="detailChecks">${routineItem(!!d.c1,'클렌징 루틴 1')}${routineItem(!!d.c2,'클렌징 루틴 2')}${routineItem(!!d.c3,'기초 케어 루틴')}</div>`;
+  const life=(d.lifestyle||[]).length?`<div class="detailChips">${(d.lifestyle||[]).map(v=>`<span class="detailChip">${escHtml(lifeLabel(v))}</span>`).join('')}</div>`:'<p class="small">기록 없음</p>';
+  const memo=d.memo?`<div class="detailMemo">${escHtml(d.memo)}</div>`:'<p class="small">기록 없음</p>';
+  dayDetailContent.innerHTML=`${dateHtml}<div class="detailSection" style="border-top:0;margin-top:0;padding-top:0"><h4>오늘의 루틴</h4>${routineHtml}</div><div class="detailSection"><h4>피부 기록</h4><div class="detailGrid">${detailRow('트러블',escHtml(d.trouble))}${detailRow('유수분',escHtml(d.balance))}${detailRow('민감도',escHtml(d.sensitive))}${detailRow('만족도',escHtml(d.satisfaction))}</div></div><div class="detailSection"><h4>생활 요인</h4>${life}</div><div class="detailSection"><h4>나의 기록</h4>${memo}</div><div class="detailSection"><h4>사진 기록</h4><div id="dayDetailPhotos"><p class="small">사진 불러오는 중...</p></div></div>`;
+  dayDetailModal.classList.add('active');
+  const photos=getDayPhotos(day);
+  const photoWrap=document.getElementById('dayDetailPhotos');
+  if(!photos.length){photoWrap.innerHTML='<p class="small">저장된 사진 없음</p>';return;}
+  let html='<div class="detailPhotos">';
+  for(const p of photos){const src=await getPhoto(p.id); if(src) html+=`<img src="${src}" alt="Day ${day} ${escHtml(p.part||'')}" onclick="openLightbox('${p.id}','Day ${day} ${escHtml(p.part||'')}')">`;}
+  html+='</div>';
+  photoWrap.innerHTML=html;
+}
+function closeDayDetail(){dayDetailModal.classList.remove('active');}
+function statLine(label,countNum,cls,total){
+  const pct=total?Math.round(countNum/total*100):0;
+  return `<div class="statRow"><span><i class="legendDot ${cls}"></i> ${label}</span><div class="statBar"><i class="${cls}" style="width:${pct}%"></i></div><b>${countNum}일</b></div>`;
+}
+function summaryCard(icon,title,key,items){
+  return `<div class="summaryCard"><h4>${title}</h4>`+items.map(([label,cls])=>statLine(label,count(key,label),cls,14)).join('')+`<p class="reportNote">총 14일</p></div>`;
+}
+function reportSummaryStats(){
+  return `<div class="guideBox compactSummary"><h4>14일 요약 통계</h4><div class="summaryStats">${summaryCard('','트러블','trouble',[['감소','statusGood'],['유지','statusCaution'],['증가','statusCheck']])}${summaryCard('','유수분','balance',[['균형','statusGood'],['번들','statusCaution'],['건조','statusCheck']])}${summaryCard('','민감도','sensitive',[['없음','statusGood'],['경미','statusCaution'],['심함','statusCheck']])}</div><p class="reportNote reportInfoText">기록한 내용을 기준으로 각 상태가 며칠씩 기록되었는지 보여줍니다.</p></div>`;
+}
+function scoreValue(key,val){
+  const scores={
+    trouble:{'감소':2,'유지':1,'증가':0},
+    balance:{'균형':2,'번들':1,'건조':0},
+    sensitive:{'없음':2,'경미':1,'심함':0}
+  };
+  return scores[key]?.[val];
+}
+function rangeItems(key,start,end){
+  let arr=[];
+  for(let i=start;i<=end;i++){
+    const v=dayData(i)[key];
+    if(v) arr.push(v);
+  }
+  return arr;
+}
+function avgScore(key,start,end){
+  const arr=rangeItems(key,start,end).map(v=>scoreValue(key,v)).filter(v=>v!==undefined);
+  if(!arr.length) return null;
+  return arr.reduce((a,b)=>a+b,0)/arr.length;
+}
+function topValueInRange(key,labels,start,end){
+  const arr=rangeItems(key,start,end);
+  if(!arr.length) return ['',0];
+  return labels.map(v=>[v,arr.filter(x=>x===v).length]).sort((a,b)=>b[1]-a[1] || labels.indexOf(a[0])-labels.indexOf(b[0]))[0];
+}
+function trendDirection(before,after){
+  if(before===null||after===null) return 'insufficient';
+  const diff=after-before;
+  if(diff>=0.45) return 'improved';
+  if(diff<=-0.45) return 'worse';
+  if(Math.abs(diff)<0.2) return 'steady';
+  return diff>0?'slightlyImproved':'slightlyWorse';
+}
+function dayValues(key){
+  const arr=[];
+  for(let i=1;i<=14;i++) arr.push(dayData(i)[key]||'');
+  return arr;
+}
+function dayListText(days){
+  if(!days.length) return '';
+  if(days.length===1) return `Day ${days[0]}`;
+  return days.map(d=>`Day ${d}`).join(', ');
+}
+function valueCounts(arr,labels){
+  const counts={}; labels.forEach(v=>counts[v]=0);
+  arr.forEach(v=>{ if(v) counts[v]=(counts[v]||0)+1; });
+  return counts;
+}
+function joinKorean(items){
+  const clean=items.filter(Boolean);
+  if(!clean.length) return '';
+  if(clean.length===1) return clean[0];
+  return clean.slice(0,-1).join(', ')+'와 '+clean[clean.length-1];
+}
+function findStableStart(arr,good){
+  let best=null;
+  for(let start=1;start<=10;start++){
+    const part=arr.slice(start-1).filter(Boolean);
+    if(part.length<5) continue;
+    const goodCount=part.filter(v=>v===good).length;
+    const rate=goodCount/part.length;
+    if(rate>=0.75){ best={start,part,goodCount,rate}; break; }
+  }
+  return best;
+}
+function trendSentence(key,label,labels){
+  const config={
+    trouble:{good:'감소',mid:'유지',bad:'증가',goodText:'감소 기록',midText:'유지 기록',badText:'증가 기록',steadyText:'트러블 감소 흐름',goodKeep:'감소 기록이 꾸준히 이어졌습니다'},
+    balance:{good:'균형',mid:'번들',bad:'건조',goodText:'유수분 균형',midText:'번들 기록',badText:'건조 기록',steadyText:'유수분 균형',goodKeep:'유수분 균형이 꾸준히 유지되었습니다'},
+    sensitive:{good:'없음',mid:'경미',bad:'심함',goodText:'민감 반응 없음',midText:'경미한 민감 반응',badText:'심한 민감 반응',steadyText:'민감 반응 없음',goodKeep:'민감 반응 없이 안정적인 상태가 유지되었습니다'}
+  }[key];
+  const arr=dayValues(key);
+  const recorded=arr.filter(Boolean);
+  if(recorded.length<5) return `<p class="small"><strong>${label}</strong>은 아직 기록이 충분하지 않아 흐름을 정리하기 어렵습니다.</p>`;
+  const first=arr.slice(0,5).filter(Boolean);
+  const last=arr.slice(9,14).filter(Boolean);
+  const firstAvg=avgScore(key,1,5);
+  const lastAvg=avgScore(key,10,14);
+  const stable=findStableStart(arr,config.good);
+  const counts=valueCounts(recorded,labels);
+  const firstIssueTexts=[];
+  if(first.includes(config.mid)) firstIssueTexts.push(config.midText);
+  if(first.includes(config.bad)) firstIssueTexts.push(config.badText);
+
+  let text='';
+  if(stable){
+    const after=arr.slice(stable.start-1);
+    const interruptionDays=[];
+    after.forEach((v,idx)=>{ if(v && v!==config.good) interruptionDays.push(stable.start+idx); });
+    if(firstIssueTexts.length){
+      text=`초반에는 ${joinKorean(firstIssueTexts)}이 있었지만, 이후에는 ${config.goodKeep}`;
+    }else if(stable.start<=2){
+      text=`14일 동안 ${config.goodText}이 꾸준히 기록되어 ${config.steadyText}이 안정적으로 유지되었습니다.`;
+    }else{
+      text=`기록 중반 이후부터 ${config.goodKeep}`;
+    }
+    if(interruptionDays.length){
+      const badDays=interruptionDays.filter(d=>arr[d-1]===config.bad);
+      const midDays=interruptionDays.filter(d=>arr[d-1]===config.mid);
+      if(badDays.length===1){
+        text+=` ${dayListText(badDays)}에 일시적인 ${config.badText}이 있었지만 다시 ${config.goodText}으로 돌아왔습니다.`;
+      }else if(badDays.length>1){
+        text+=` 중간에 ${config.badText}이 ${badDays.length}일 있었지만, 전체적으로는 ${config.goodText}이 더 많이 이어졌습니다.`;
+      }else if(midDays.length){
+        text+=` 중간에 ${config.midText}이 일부 있었지만, 전체적으로는 ${config.goodText}이 더 많이 이어졌습니다.`;
+      }
+    }
+  }else{
+    const dir=trendDirection(firstAvg,lastAvg);
+    const top=labels.map(v=>[v,counts[v]||0]).sort((a,b)=>b[1]-a[1] || labels.indexOf(a[0])-labels.indexOf(b[0]))[0];
+    if(dir==='improved'||dir==='slightlyImproved') text=`초반보다 후반에 ${config.goodText}이 늘어나며 조금씩 안정되는 흐름을 보였습니다.`;
+    else if(dir==='steady' && top[0]===config.good) text=`14일 동안 ${config.goodText}이 가장 많이 기록되어 비교적 안정적인 흐름을 유지했습니다.`;
+    else if(dir==='steady') text=`14일 동안 ${top[0]} 기록이 반복되어 큰 변화 없이 비슷한 흐름을 보였습니다.`;
+    else if(dir==='worse'||dir==='slightlyWorse') text=`후반으로 갈수록 ${config.midText}이나 ${config.badText}이 더 눈에 띄어 관리 루틴과 생활 패턴을 함께 점검해보는 것이 좋습니다.`;
+    else text=`저장된 기록을 기준으로 ${label} 흐름을 확인했습니다.`;
+  }
+  return `<p class="small"><strong>${label}</strong>은 ${text}</p>`;
+}
+function lifestyleAnalysisLine(){
+  const ranked=lifestyleOptions.map(v=>[v,countLifestyle(v)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  if(!ranked.length) return '가장 자주 기록된 항목은 아직 없습니다. 수면, 수분, 스트레스 같은 항목도 함께 체크하면 피부 흐름을 더 객관적으로 확인하는 데 도움이 됩니다.';
+  const top=ranked.slice(0,2);
+  const topText=top.map(([v,n])=>`${v}(${n}회)`).join('과 ');
+  const pattern=reportPattern();
+  if(top[0][1]>=1){
+    if(pattern==='stable') return `가장 자주 기록된 항목은 ${topText}였습니다. 현재 루틴을 유지하면서 자주 기록된 항목도 함께 관리하면 피부 컨디션을 보다 안정적으로 유지하는 데 도움이 됩니다.`;
+    return `가장 자주 기록된 항목은 ${topText}였습니다. 자주 기록된 항목도 함께 관리하면 피부 컨디션을 보다 안정적으로 유지하는 데 도움이 됩니다.`;
+  }
+  return `가장 자주 기록된 항목은 ${topText}였습니다. 피부가 흔들린 날과 함께 비교해보면 관리 방향을 잡는 데 도움이 됩니다.`;
+}
+function finalDirectionLine(){
+  const pattern=reportPattern();
+  if(pattern==='stable') return '현재 관리 방향을 유지하며 피부 흐름을 꾸준히 확인해보세요.';
+  if(pattern==='caution') return '세정·기초 제품과 수분 상태를 함께 확인해보고, 필요한 부분은 조금씩 조절해보세요.';
+  if(pattern==='check') return '현재 관리 루틴과 자극 요인을 다시 확인해보고, 피부 변화를 조금 더 관찰해보세요.';
+  if(pattern==='mixed') return '현재 관리 루틴과 생활 요인을 함께 점검하며 피부 변화를 조금 더 살펴보세요.';
+  return '앞으로도 같은 기준으로 기록을 이어가며 피부 흐름을 꾸준히 확인해보세요.';
+}
+
+function routineCard(c){
+  const pct=Math.round(c/14*100)||0;
+  const segs=Array.from({length:14},(_,i)=>`<span class="${i<c?'filled':''}"></span>`).join('');
+  return `<div class="routineCard"><div class="routineTop"><div><div class="routineLabel">루틴 실천율</div><div class="routineDay"><b>Day ${c}</b> / 14</div></div><div class="routineMeta"><strong>${pct}%</strong><br>${c}일 기록 완료</div></div><div class="routineSegments">${segs}</div></div>`;
+}
+function renderReport(){
+  let c=completed();
+  let lifestyleHtml='<div class="guideBox"><h4>생활 요인 <span class="small">(누적 횟수)</span></h4><div class="lifestyleCards">'+lifestyleOptions.map(v=>`<div class="lifeCard"><span class="lifeIcon">${lifestyleIcons[v]||'+'}</span><strong>${v}</strong><b>${countLifestyle(v)}회</b></div>`).join('')+'</div><p class="reportNote reportInfoText">체크한 생활 요인이 14일 동안 몇 번 기록되었는지 보여줍니다.</p></div>';
+  let memoRows=[];
+  for(let i=1;i<=14;i++){
+    let m=dayData(i).memo;
+    if(m) memoRows.push(`<button class="small memoLine" type="button" onclick="openDayDetail(${i})" title="Day ${i} 기록 상세 보기"><strong>Day ${i}</strong> : ${escHtml(m)}</button>`);
+  }
+  let memoHtml=memoRows.length
+    ? `<div class="guideBox"><h4>나의 기록</h4><div class="memoScroll">${memoRows.join('')}</div><p class="reportNote reportInfoText">Day를 누르면 상세 기록을 확인할 수 있습니다.</p></div>`
+    : `<div class="guideBox"><h4>나의 기록</h4><p class="small" style="margin:0">아직 작성된 기록이 없습니다.</p></div>`;
+  reportContent.innerHTML=`${reportTimeline()}${reportSummaryStats()}${lifestyleHtml}${memoHtml}`;
+  renderCompare();
+}
+
+function metric(name,val,pct){return `<div class="metric"><strong>${name}</strong><b>${val}</b><div class="miniBar"><i style="width:${Math.min(100,pct)}%"></i></div></div>`}
+
+const photoParts=['정면','좌측','우측','이마','턱'];
+const PHOTO_DB='skin14_photo_db_v2', PHOTO_STORE='photos';
+let currentComparePart='';
+let currentPhotoPanel='compare';
+let currentSliderCompare=null;
+let modalScrollY=0;
+function photoDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(PHOTO_DB,1);
+    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(PHOTO_STORE)){req.result.createObjectStore(PHOTO_STORE);}};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function putPhoto(id,data){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction(PHOTO_STORE,'readwrite');tx.objectStore(PHOTO_STORE).put(data,id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
+async function getPhoto(id){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction(PHOTO_STORE,'readonly');const r=tx.objectStore(PHOTO_STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function removePhotoData(id){const db=await photoDB();return new Promise((res)=>{const tx=db.transaction(PHOTO_STORE,'readwrite');tx.objectStore(PHOTO_STORE).delete(id);tx.oncomplete=res;tx.onerror=res;});}
+function readFileAsDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+function loadImage(src){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=rej;img.src=src;});}
+async function compressPhoto(file){
+  const src=await readFileAsDataURL(file); const img=await loadImage(src);
+  const max=1200; let w=img.width, h=img.height;
+  if(w>h && w>max){h=Math.round(h*max/w);w=max;} else if(h>=w && h>max){w=Math.round(w*max/h);h=max;}
+  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+  return canvas.toDataURL('image/jpeg',0.82);
+}
+function getDayPhotos(d){return (dayData(d).photos||[]).filter(Boolean)}
+function getDayPhotoSlots(d){return dayData(d).photos||[]}
+function visiblePhotoSlots(slots){return Math.max(3, Math.min(5, slots.length || 3));}
+function addPhotoSlot(){
+  const d=state.selected; let arr=dayData(d).photos||[];
+  if(arr.length>=5){alert('사진은 하루 최대 5장까지 저장할 수 있습니다.');return;}
+  arr.push(null); state.days[d]={...dayData(d),photos:arr}; saveState(); renderPhotos();
+}
+let photoRenderSeq=0;
+async function renderPhotos(){
+  const seq=++photoRenderSeq;
+  const d=state.selected, slots=getDayPhotoSlots(d);
+  const n=visiblePhotoSlots(slots);
+  let html='';
+  for(let i=0;i<n;i++){
+    const p=slots[i]; const defaultPart=photoParts[i]||'정면';
+    html+=`<div class="photoSlot" id="photoSlot${i}">${p?'<div class="small loadingText">사진 불러오는 중...</div>':''}${!p?`<div class="photoMeta" style="margin-bottom:7px"><select id="partSelect${i}">${photoParts.map(x=>`<option value="${x}" ${defaultPart===x?'selected':''}>${x}</option>`).join('')}</select></div><label>사진 등록<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}${p?`<div class="photoMeta"><select onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><button class="tinyBtn" onclick="deletePhoto(${d},${i})">삭제</button></div><label>사진 변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}</div>`;
+  }
+  if(n<5) html+=`<button class="photoSlot addSlot" type="button" onclick="addPhotoSlot()"><strong>＋ 사진 추가</strong></button>`;
+  photoGrid.innerHTML=html;
+  for(let i=0;i<n;i++){
+    const p=slots[i]; if(!p) continue;
+    const src=await getPhoto(p.id);
+    if(seq!==photoRenderSeq || d!==state.selected) return;
+    const slot=document.getElementById('photoSlot'+i);
+    if(slot && src){
+      const controls=`<div class="photoMeta"><select onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><button class="tinyBtn" onclick="deletePhoto(${d},${i})">삭제</button></div><label>사진 변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`;
+      slot.innerHTML=`<img src="${src}" alt="Day ${d} ${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')"><div class="small"><strong>${p.part||'부위 선택'}</strong></div>${controls}`;
+    }else if(slot){
+      slot.querySelector('.loadingText')?.remove();
+    }
+  }
+}
+async function addPhoto(e,d,slot){
+  const file=e.target.files[0]; if(!file) return;
+  try{
+    const data=await compressPhoto(file);
+    const id=`day${d}_photo${slot}_${Date.now()}`;
+    await putPhoto(id,data);
+    const old=dayData(d).photos||[];
+    if(old[slot]&&old[slot].id) removePhotoData(old[slot].id);
+    const selected=document.getElementById('partSelect'+slot)?.value;
+    old[slot]={id,part:selected||old[slot]?.part||photoParts[slot]||'정면',savedAt:new Date().toISOString()};
+    state.days[d]={...dayData(d),photos:old};
+    saveState();
+    loadForm();
+    await renderPhotos();
+    await renderCompare();
+  }catch(err){alert('사진 저장 중 오류가 발생했습니다. 다른 사진으로 다시 시도해보세요.');}
+}
+function updatePhotoPart(d,slot,part){let arr=dayData(d).photos||[];if(arr[slot]){arr[slot].part=part;state.days[d]={...dayData(d),photos:arr};saveState();renderCompare();renderPhotoTimeline();}}
+async function deletePhoto(d,slot){let arr=dayData(d).photos||[];if(!arr[slot])return;if(confirm('이 사진을 삭제할까요?')){await removePhotoData(arr[slot].id);arr[slot]=null;state.days[d]={...dayData(d),photos:arr};saveState();loadForm();await renderCompare();await renderPhotoTimeline();}}
+function allPhotosByPart(){
+  const by={};
+  for(let d=1;d<=14;d++){
+    for(const p of getDayPhotos(d)){
+      const part=p.part||'정면';
+      (by[part] ||= []).push({day:d,photo:p});
+    }
+  }
+  Object.values(by).forEach(arr=>arr.sort((a,b)=>a.day-b.day || String(a.photo.savedAt||'').localeCompare(String(b.photo.savedAt||''))));
+  return by;
+}
+function hasTwoDifferentDays(items){
+  return new Set((items||[]).map(x=>x.day)).size>=2;
+}
+function firstAndLastDifferentDay(items){
+  if(!items||!items.length) return null;
+  const first=items[0];
+  for(let i=items.length-1;i>=0;i--){
+    if(items[i].day!==first.day) return [first,items[i]];
+  }
+  return null;
+}
+function bestComparePart(by){
+  const compareParts=photoParts.filter(p=>hasTwoDifferentDays(by[p]||[]));
+  if(compareParts.length) return compareParts.sort((a,b)=>(by[b].length-by[a].length) || photoParts.indexOf(a)-photoParts.indexOf(b))[0];
+  const anyParts=photoParts.filter(p=>(by[p]||[]).length);
+  return anyParts[0]||'';
+}
+function showPhotoPanel(panel){
+  currentPhotoPanel=panel;
+  const cp=document.getElementById('photoComparePanel'), tp=document.getElementById('photoTimelinePanel');
+  const ct=document.getElementById('compareTab'), tt=document.getElementById('timelineTab');
+  if(cp&&tp){cp.style.display=panel==='compare'?'block':'none';tp.style.display=panel==='timeline'?'block':'none';}
+  if(ct&&tt){ct.classList.toggle('active',panel==='compare');tt.classList.toggle('active',panel==='timeline');}
+  if(panel==='compare') renderCompare();
+  if(panel==='timeline') renderPhotoTimeline();
+}
+async function selectComparePart(part){ currentComparePart=part; await renderCompare(); }
+async function renderCompare(){
+  await renderPartButtons();
+  await renderCompareArea();
+  await renderPhotoTimeline();
+}
+async function renderPartButtons(){
+  const el=document.getElementById('partButtons'); if(!el) return;
+  const by=allPhotosByPart();
+  const available=photoParts.filter(p=>(by[p]||[]).length>0);
+  if(!available.length){
+    currentComparePart='';
+    el.innerHTML='';
+    return;
+  }
+  if(!currentComparePart || !available.includes(currentComparePart)) currentComparePart=bestComparePart(by);
+  el.innerHTML=available.map(p=>`<button class="partBtn ${p===currentComparePart?'active':''}" onclick="selectComparePart('${p}')">${p}</button>`).join('');
+}
+async function safeGetPhoto(id){
+  try{return await getPhoto(id);}catch(e){console.warn('photo load failed', e);return null;}
+}
+function escapeAttrText(str){return String(str||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+
+function formatPhotoDate(value){
+  if(!value) return '';
+  const d=new Date(value);
+  if(isNaN(d.getTime())) return '';
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}.${m}.${day}`;
+}
+
+function dayDateLabel(item){
+  return `Day ${item.day}`;
+}
+
+function reportPattern(){
+  const keys=['trouble','balance','sensitive'];
+  let good=0,caution=0,check=0,total=0;
+  for(let i=1;i<=14;i++){
+    for(const key of keys){
+      const v=dayData(i)[key];
+      if(!v) continue;
+      total++;
+      const cls=reportStatusClass(key,v);
+      if(cls==='statusGood') good++;
+      else if(cls==='statusCaution') caution++;
+      else if(cls==='statusCheck') check++;
+    }
+  }
+  if(!total) return 'insufficient';
+  if(check>=5 && caution>=5) return 'mixed';
+  if(check>=7) return 'check';
+  if(caution+check>=10) return 'caution';
+  if(good>=Math.ceil(total*0.6) && check<=3) return 'stable';
+  if(caution>=check) return 'caution';
+  return 'check';
+}
+function overallFlowLine(){
+  const pattern=reportPattern();
+  if(pattern==='stable') return '14일 동안 전반적으로 안정적인 기록이 많이 나타났습니다. 현재 관리 방향이 피부 흐름에 비교적 잘 맞는 편으로 보입니다.';
+  if(pattern==='caution') return '14일 동안 주의가 필요한 기록이 일부 반복되었습니다. 큰 변화보다는 세정, 기초 케어, 수분 상태를 함께 점검해보는 것이 좋습니다.';
+  if(pattern==='check') return '14일 동안 점검이 필요한 기록이 눈에 띄었습니다. 현재 루틴과 자극 요인을 다시 확인하며 피부 변화를 조금 더 관찰해보는 것이 좋습니다.';
+  if(pattern==='mixed') return '14일 동안 주의와 점검 기록이 반복되어 피부 흐름이 일정하지 않았습니다. 관리 루틴과 생활 요인을 함께 살펴보는 것이 좋습니다.';
+  return '저장된 기록을 기준으로 14일 피부 흐름을 확인했습니다.';
+}
+
+async function renderCompareArea(){
+  const area=document.getElementById('compareArea');
+  if(!area) return;
+  const by=allPhotosByPart();
+  const available=photoParts.filter(p=>(by[p]||[]).length>0);
+  if(!available.length){
+    currentComparePart='';
+    area.innerHTML='<p class="small" style="margin-top:12px">아직 저장된 사진이 없습니다.</p>';
+    await renderPartButtons();
+    return;
+  }
+  if(!currentComparePart || !available.includes(currentComparePart)){
+    currentComparePart=bestComparePart(by)||available[0];
+  }
+  await renderPartButtons();
+  const part=currentComparePart;
+  const items=(by[part]||[]).filter(x=>x&&x.photo&&x.photo.id).slice().sort((a,b)=>a.day-b.day || String(a.photo.savedAt||'').localeCompare(String(b.photo.savedAt||'')));
+  if(!items.length){
+    area.innerHTML='<p class="small" style="margin-top:12px">아직 저장된 사진이 없습니다.</p>';
+    return;
+  }
+  const pair=firstAndLastDifferentDay(items);
+  if(!pair){
+    const only=items[0];
+    const src=await safeGetPhoto(only.photo.id);
+    const meta=`Day ${only.day} ${escapeAttrText(part)}`;
+    area.innerHTML=`<div class="compareEmptyBox"><strong>${escapeAttrText(part)} 사진 비교</strong><div class="beforeAfterGrid"><div class="beforeAfterCard">${src?`<img src="${src}" alt="${meta}" onclick="openLightbox('${only.photo.id}','${meta}')">`:''}<strong>${dayDateLabel(only)}</strong><span>${formatPhotoDate(only.photo.savedAt)}</span></div><div class="beforeAfterCard emptyCompareCard"><strong>비교 대기</strong><span>다른 날짜의 사진을 등록하면 비교할 수 있습니다.</span></div></div></div>`;
+    return;
+  }
+  const [first,last]=pair;
+  const src1=await safeGetPhoto(first.photo.id);
+  const src2=await safeGetPhoto(last.photo.id);
+  if(!src1 || !src2){
+    area.innerHTML='<p class="small" style="margin-top:12px">사진을 불러오지 못했습니다. 전체 기록에서 사진이 보이는지 확인한 뒤 다시 열어보세요.</p>';
+    return;
+  }
+  const partEsc=escapeAttrText(part);
+  currentSliderCompare={first,last,src1,src2,part:partEsc};
+  area.innerHTML=`<div class="guideBox"><h4>${partEsc} 사진 비교</h4><div class="beforeAfterGrid"><div class="beforeAfterCard"><img src="${src1}" alt="Day ${first.day} ${partEsc}" onclick="openLightbox('${first.photo.id}','Day ${first.day} ${partEsc}')"><strong>${dayDateLabel(first)}</strong><span>${formatPhotoDate(first.photo.savedAt)}</span></div><div class="beforeAfterCard"><img src="${src2}" alt="Day ${last.day} ${partEsc}" onclick="openLightbox('${last.photo.id}','Day ${last.day} ${partEsc}')"><strong>${dayDateLabel(last)}</strong><span>${formatPhotoDate(last.photo.savedAt)}</span></div></div><button class="compareDetailBtn" id="sliderToggleBtn" type="button" onclick="openSliderModal()">🔍 자세히 비교하기</button></div>`;
+}
+function openSliderModal(){
+  if(!currentSliderCompare) return;
+  modalScrollY=window.scrollY || document.documentElement.scrollTop || 0;
+  const {first,last,src1,src2,part}=currentSliderCompare;
+  compareModalTitle.textContent=`${part} 자세히 비교`;
+  compareModalContent.innerHTML=`<div class="compareLabels"><div class="labelBox">${dayDateLabel(first)}<br><span class="small">${part}</span></div><div class="labelBox">${dayDateLabel(last)}<br><span class="small">${part}</span></div></div><div class="sliderWrap" id="modalSliderWrap"><img src="${src1}" alt="Day ${first.day} ${part}"><img class="afterImg" id="modalAfterImg" src="${src2}" alt="Day ${last.day} ${part}"><div class="sliderLine" id="modalSliderLine"></div><div class="sliderHandle" id="modalSliderHandle">↔</div></div><div class="compareDateLabels"><div class="dateBox">${formatPhotoDate(first.photo.savedAt)}</div><div class="dateBox">${formatPhotoDate(last.photo.savedAt)}</div></div><p class="compareGuideText">가운데 선을 좌우로 움직여 두 사진을 비교해보세요.</p>`;
+  document.body.style.top=`-${modalScrollY}px`;
+  document.body.classList.add('modalLocked');
+  compareModal.classList.add('active');
+  setTimeout(()=>initSliderByIds('modalSliderWrap','modalAfterImg','modalSliderLine','modalSliderHandle'),0);
+}
+function closeSliderModal(){
+  compareModal.classList.remove('active');
+  compareModalContent.innerHTML='';
+  document.body.classList.remove('modalLocked');
+  document.body.style.top='';
+  window.scrollTo(0,modalScrollY);
+}
+function initSlider(){
+  initSliderByIds('sliderWrap','afterImg','sliderLine','sliderHandle');
+}
+function initSliderByIds(wrapId,afterId,lineId,handleId){
+  const wrap=document.getElementById(wrapId), after=document.getElementById(afterId), line=document.getElementById(lineId), handle=document.getElementById(handleId);
+  if(!wrap||!after||!line||!handle) return;
+  const setPos=(clientX)=>{const r=wrap.getBoundingClientRect();let pct=(clientX-r.left)/r.width*100;pct=Math.max(0,Math.min(100,pct));after.style.clipPath=`inset(0 0 0 ${pct}%)`;line.style.left=pct+'%';handle.style.left=pct+'%';};
+  wrap.onpointerdown=e=>{wrap.setPointerCapture(e.pointerId);setPos(e.clientX);wrap.onpointermove=ev=>setPos(ev.clientX);};
+  wrap.onpointerup=e=>{wrap.onpointermove=null;};
+  wrap.onpointercancel=e=>{wrap.onpointermove=null;};
+}
+async function renderPhotoTimeline(){
+  const wrap=document.getElementById('photoTimeline'); if(!wrap) return;
+  let days=[]; for(let i=1;i<=14;i++){if(getDayPhotos(i).length) days.push(i)}
+  if(!days.length){wrap.innerHTML='<p class="small">아직 저장된 사진이 없습니다.</p>';return;}
+  let html=`<div class="guideBox"><h4>전체 사진 기록</h4><div class="photoRecordScroll">`;
+  for(const d of days){
+    const photos=getDayPhotos(d);
+    let imgs='';
+    for(const p of photos){
+      const src=await getPhoto(p.id);
+      if(src) imgs+=`<img src="${src}" title="${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')">`;
+    }
+    const parts=photos.map(p=>p.part).filter(Boolean).join(', ');
+    html+=`<div class="photoRecordCard"><div class="photoRecordTop"><strong>Day ${d}</strong><span>${photos.length}장</span></div><div class="photoRecordImgs">${imgs}</div>${parts?`<div class="photoRecordParts">${parts}</div>`:''}</div>`;
+  }
+  html+=`</div><p class="photoRecordHint">좌우로 밀어서 전체 사진 기록을 확인할 수 있습니다.</p></div>`;
+  wrap.innerHTML=html;
+}
+async function openLightbox(id,meta){ const src=await getPhoto(id); if(!src) return; lightboxImg.src=src; lightboxMeta.textContent=meta||''; lightbox.classList.add('active'); }
+function closeLightbox(){ lightbox.classList.remove('active'); lightboxImg.src=''; }
+function resetAll(){if(confirm('모든 기록을 초기화할까요?')){localStorage.removeItem(KEY);state={selected:1,days:{}};renderAll();showView('home')}}
+function renderAll(){renderHome();renderDayGrid();renderTable();renderReport();renderPhotos()}state.selected=isUnlocked(state.selected)?state.selected:today();renderAll();loadForm();
+</script>
+</body>
+</html>
