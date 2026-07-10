@@ -1022,6 +1022,57 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   }
 }
 
+
+
+/* Mobile photo controls: replace native label/select taps with custom controls */
+.photoPartControl{position:relative;width:66px;margin:0 auto;}
+.photoPartBtn{
+  width:66px;min-width:66px;max-width:66px;height:34px;
+  border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);
+  font-size:12px;line-height:1;font-weight:500;padding:0 20px 0 7px;
+  position:relative;display:flex;align-items:center;justify-content:center;
+  -webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent!important;
+  outline:none!important;box-shadow:none!important;touch-action:manipulation;
+}
+.photoPartBtn::after{
+  content:"";position:absolute;right:7px;top:50%;width:6px;height:6px;
+  border-right:1.7px solid #111827;border-bottom:1.7px solid #111827;
+  transform:translateY(-68%) rotate(45deg);pointer-events:none;
+}
+.photoPartMenu{
+  display:none;position:absolute;left:50%;top:38px;transform:translateX(-50%);
+  width:82px;padding:5px;background:#fff;border:1px solid var(--line);border-radius:11px;
+  box-shadow:0 10px 24px rgba(15,23,42,.16);z-index:80;
+}
+.photoPartControl.open .photoPartMenu{display:grid;gap:3px;}
+.photoPartOption{
+  width:100%;border:0;border-radius:8px;background:#fff;color:var(--ink);
+  padding:7px 5px;font-size:12px;text-align:center;
+  -webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent!important;
+  outline:none!important;box-shadow:none!important;touch-action:manipulation;
+}
+.photoPartOption.selected{background:#f3f0ff;color:var(--accent);font-weight:900;}
+.photoPickerInput{position:fixed!important;left:-9999px!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;}
+.photoRegisterBtn,.photoChangeBtn{
+  border:0!important;-webkit-appearance:none!important;appearance:none!important;
+  -webkit-tap-highlight-color:transparent!important;outline:none!important;box-shadow:none!important;
+  touch-action:manipulation!important;
+}
+.photoSlot,.photoSlot *{-webkit-tap-highlight-color:transparent!important;}
+.photoPartBtn:active,.photoPartBtn:focus,.photoPartBtn:focus-visible,
+.photoPartOption:active,.photoPartOption:focus,.photoPartOption:focus-visible,
+.photoRegisterBtn:active,.photoRegisterBtn:focus,.photoRegisterBtn:focus-visible,
+.photoChangeBtn:active,.photoChangeBtn:focus,.photoChangeBtn:focus-visible{
+  outline:none!important;box-shadow:none!important;filter:none!important;transform:none!important;
+}
+.photoPartBtn:active{background:#fff!important;color:var(--ink)!important;}
+.photoPartOption:active{background:#f3f0ff!important;color:var(--accent)!important;}
+.photoRegisterBtn:active,.photoChangeBtn:active{background:#f3f0ff!important;color:var(--accent)!important;}
+@media(max-width:380px){
+  .photoPartControl,.photoPartBtn{width:62px;min-width:62px;max-width:62px;}
+  .photoPartMenu{width:78px;}
+}
+
 </style>
 </head>
 <body>
@@ -1398,6 +1449,35 @@ function addPhotoSlot(){
   arr.push(null); state.days[d]={...dayData(d),photos:arr}; saveState(); renderPhotos();
 }
 let photoRenderSeq=0;
+
+function closePhotoPartMenus(except){
+  document.querySelectorAll('.photoPartControl.open').forEach(el=>{if(el!==except) el.classList.remove('open');});
+}
+function togglePhotoPartMenu(event,id){
+  event.stopPropagation();
+  const control=document.getElementById(id); if(!control) return;
+  const willOpen=!control.classList.contains('open');
+  closePhotoPartMenus(control);
+  control.classList.toggle('open',willOpen);
+}
+function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
+  event.stopPropagation();
+  const control=document.getElementById(controlId); if(!control) return;
+  control.dataset.value=value;
+  const label=control.querySelector('.photoPartBtn .photoPartText'); if(label) label.textContent=value;
+  control.querySelectorAll('.photoPartOption').forEach(btn=>btn.classList.toggle('selected',btn.dataset.value===value));
+  control.classList.remove('open');
+  if(!isEmpty) updatePhotoPart(d,slot,value);
+}
+function photoPartControlHtml(d,slot,current,isEmpty){
+  const id=`photoPartControl_${d}_${slot}`;
+  return `<div class="photoPartControl" id="${id}" data-value="${current}"><button class="photoPartBtn" type="button" onclick="togglePhotoPartMenu(event,'${id}')"><span class="photoPartText">${current}</span></button><div class="photoPartMenu">${photoParts.map(x=>`<button class="photoPartOption ${x===current?'selected':''}" type="button" data-value="${x}" onclick="choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})">${x}</button>`).join('')}</div></div>`;
+}
+function openPhotoPicker(inputId){
+  closePhotoPartMenus();
+  const input=document.getElementById(inputId); if(input) input.click();
+}
+document.addEventListener('click',()=>closePhotoPartMenus());
 async function renderPhotos(){
   const seq=++photoRenderSeq;
   const d=state.selected, slots=getDayPhotoSlots(d);
@@ -1405,7 +1485,13 @@ async function renderPhotos(){
   let html='';
   for(let i=0;i<n;i++){
     const p=slots[i]; const defaultPart=photoParts[i]||'정면';
-    html+=`<div class="photoSlot" id="photoSlot${i}">${p?'<div class="small loadingText">사진 불러오는 중...</div>':''}${!p?`<div class="photoMeta emptyPhotoMeta"><select id="partSelect${i}">${photoParts.map(x=>`<option value="${x}" ${defaultPart===x?'selected':''}>${x}</option>`).join('')}</select></div><label class="photoRegisterBtn">사진 등록<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}${p?`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><div class="photoActionButtons"><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" onclick="deletePhoto(${d},${i})">삭제</button></div></div>`:''}</div>`;
+    const currentPart=p?.part||defaultPart;
+    const inputId=`photoInput_${d}_${i}`;
+    if(!p){
+      html+=`<div class="photoSlot" id="photoSlot${i}"><div class="photoMeta emptyPhotoMeta">${photoPartControlHtml(d,i,currentPart,true)}</div><input class="photoPickerInput" id="${inputId}" type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"><button class="photoRegisterBtn" type="button" onclick="openPhotoPicker('${inputId}')">사진 등록</button></div>`;
+    }else{
+      html+=`<div class="photoSlot" id="photoSlot${i}"><div class="small loadingText">사진 불러오는 중...</div><input class="photoPickerInput" id="${inputId}" type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"><div class="photoActions">${photoPartControlHtml(d,i,currentPart,false)}<div class="photoActionButtons"><button class="photoChangeBtn" type="button" onclick="openPhotoPicker('${inputId}')">변경</button><button class="photoDeleteBtn" type="button" onclick="deletePhoto(${d},${i})">삭제</button></div></div></div>`;
+    }
   }
   if(n<5) html+=`<button class="photoSlot addSlot" type="button" onclick="addPhotoSlot()"><strong class="addPhotoPlus">＋</strong><span class="addPhotoText">사진 추가</span></button>`;
   photoGrid.innerHTML=html;
@@ -1415,7 +1501,8 @@ async function renderPhotos(){
     if(seq!==photoRenderSeq || d!==state.selected) return;
     const slot=document.getElementById('photoSlot'+i);
     if(slot && src){
-      const controls=`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><div class="photoActionButtons"><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" onclick="deletePhoto(${d},${i})">삭제</button></div></div>`;
+      const inputId=`photoInput_${d}_${i}`;
+      const controls=`<input class="photoPickerInput" id="${inputId}" type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"><div class="photoActions">${photoPartControlHtml(d,i,p.part||photoParts[i]||'정면',false)}<div class="photoActionButtons"><button class="photoChangeBtn" type="button" onclick="openPhotoPicker('${inputId}')">변경</button><button class="photoDeleteBtn" type="button" onclick="deletePhoto(${d},${i})">삭제</button></div></div>`;
       slot.innerHTML=`<img src="${src}" alt="Day ${d} ${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')">${controls}`;
     }else if(slot){
       slot.querySelector('.loadingText')?.remove();
@@ -1430,7 +1517,7 @@ async function addPhoto(e,d,slot){
     await putPhoto(id,data);
     const old=dayData(d).photos||[];
     if(old[slot]&&old[slot].id) removePhotoData(old[slot].id);
-    const selected=document.getElementById('partSelect'+slot)?.value;
+    const selected=document.getElementById(`photoPartControl_${d}_${slot}`)?.dataset.value;
     old[slot]={id,part:selected||old[slot]?.part||photoParts[slot]||'정면',savedAt:new Date().toISOString()};
     state.days[d]={...dayData(d),photos:old};
     saveState();
