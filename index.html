@@ -1195,6 +1195,122 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   .photoRecordScroll.multiRecord .photoRecordCard{flex-basis:82%;}
 }
 
+
+
+/* 2026-07-11 linked mobile UI fixes */
+:root{--bottom-nav-safe:calc(78px + env(safe-area-inset-bottom));}
+
+/* 1-2. Wider full-photo cards with only a subtle adjacent-card preview. */
+.photoRecordScroll.singleRecord{
+  justify-content:center!important;
+  overflow-x:hidden!important;
+  padding:4px 18px 8px!important;
+}
+.photoRecordScroll.multiRecord{
+  justify-content:flex-start!important;
+  gap:10px!important;
+  padding:4px 18px 8px!important;
+  scroll-padding-inline:18px!important;
+}
+.photoRecordScroll .photoRecordCard{
+  flex:0 0 calc(100% - 48px)!important;
+  width:calc(100% - 48px)!important;
+  max-width:none!important;
+  scroll-snap-align:center!important;
+}
+.photoRecordScroll.singleRecord .photoRecordCard{
+  flex-basis:calc(100% - 36px)!important;
+  width:calc(100% - 36px)!important;
+}
+.photoRecordImgs img{
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1 / 1.08!important;
+  object-fit:cover!important;
+}
+@media(max-width:380px){
+  .photoRecordScroll.multiRecord{padding-inline:16px!important;scroll-padding-inline:16px!important;}
+  .photoRecordScroll .photoRecordCard{flex-basis:calc(100% - 44px)!important;width:calc(100% - 44px)!important;}
+  .photoRecordScroll.singleRecord .photoRecordCard{flex-basis:calc(100% - 30px)!important;width:calc(100% - 30px)!important;}
+}
+
+/* 3,7. Popups end above the fixed bottom navigation and scroll internally. */
+.compareModal,
+.dayDetailModal{
+  inset:0 0 var(--bottom-nav-safe) 0!important;
+  height:auto!important;
+  padding:12px 14px!important;
+  box-sizing:border-box!important;
+}
+.compareModal{align-items:center!important;}
+.dayDetailModal{align-items:flex-end!important;}
+.compareModalBox,
+.dayDetailBox{
+  max-height:100%!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  padding-bottom:18px!important;
+  box-sizing:border-box!important;
+}
+.compareModal .sliderWrap{
+  height:clamp(250px,48vh,350px)!important;
+}
+.compareModal .compareGuideText{padding-bottom:2px!important;}
+@media(max-height:700px){
+  .compareModal .sliderWrap{height:clamp(220px,42vh,300px)!important;}
+  .compareModalBox,.dayDetailBox{border-radius:20px!important;}
+}
+
+/* 5. Every part menu opens downward and stays comfortable but shorter. */
+.photoPartControl{z-index:120!important;}
+.photoPartControl.open{z-index:1800!important;}
+.photoPartMenu,
+.photoPartControl.openUp .photoPartMenu{
+  top:38px!important;
+  bottom:auto!important;
+  width:82px!important;
+  padding:5px!important;
+  gap:2px!important;
+  z-index:1800!important;
+}
+.photoPartOption{
+  min-height:29px!important;
+  padding:5px 5px!important;
+  line-height:1.25!important;
+}
+
+/* 6. Keep photo controls clear of the bottom navigation only when they are used.
+   Do not reserve permanent empty space inside the photo card. */
+#record .card:last-child{
+  padding-bottom:18px!important;
+  scroll-margin-bottom:calc(var(--bottom-nav-safe) + 16px)!important;
+}
+.photoSlot,
+.photoPartControl,
+.photoRegisterBtn,
+.photoChangeBtn,
+.photoDeleteBtn,
+.photoSlot.addSlot{
+  scroll-margin-bottom:calc(var(--bottom-nav-safe) + 18px)!important;
+}
+
+/* 8. Bring detail values closer to their labels while keeping one clean column. */
+.dayDetailBox .detailGrid{
+  grid-template-columns:86px max-content!important;
+  justify-content:start!important;
+  column-gap:20px!important;
+  row-gap:8px!important;
+}
+.dayDetailBox .detailGrid>span{
+  width:auto!important;
+  text-align:left!important;
+  justify-self:start!important;
+}
+@media(max-width:380px){
+  .dayDetailBox .detailGrid{grid-template-columns:80px max-content!important;column-gap:16px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -1265,11 +1381,20 @@ function isUnlocked(d){return d<=today() || isComplete(d)}
 function showView(id){
   closeBalanceHelp();
   closePhotoPartMenus();
+
+  /* Returning to Report always starts from Photo Compare and the first saved part. */
+  if(id==='report'){
+    currentPhotoPanel='compare';
+    const by=allPhotosByPart();
+    currentComparePart=photoParts.find(part=>(by[part]||[]).length>0)||'';
+  }
+
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));
   renderAll();
   if(id==='record') loadForm();
+  if(id==='report') showPhotoPanel('compare');
   requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
@@ -1588,9 +1713,28 @@ function visiblePhotoSlots(slots){return Math.max(3, Math.min(5, slots.length ||
 function addPhotoSlot(){
   const d=state.selected; let arr=dayData(d).photos||[];
   if(arr.length>=5){alert('사진은 하루 최대 5장까지 저장할 수 있습니다.');return;}
-  arr.push(null); state.days[d]={...dayData(d),photos:arr}; saveState(); renderPhotos();
+  arr.push(null);
+  state.days[d]={...dayData(d),photos:arr};
+  localStorage.setItem(KEY,JSON.stringify(state));
+  renderPhotos().then(()=>ensurePhotoSlotVisible(arr.length-1,16));
 }
 let photoRenderSeq=0;
+
+function ensureAboveBottomNav(target, extra=12, behavior='smooth'){
+  const el=typeof target==='string'?document.getElementById(target):target;
+  if(!el) return;
+  const nav=document.querySelector('.tabs');
+  const navTop=nav?nav.getBoundingClientRect().top:window.innerHeight;
+  const rect=el.getBoundingClientRect();
+  const allowedBottom=navTop-extra;
+  if(rect.bottom>allowedBottom){
+    window.scrollBy({top:rect.bottom-allowedBottom,left:0,behavior});
+  }
+}
+function ensurePhotoSlotVisible(slotOrElement, extra=14){
+  const el=typeof slotOrElement==='number'?document.getElementById('photoSlot'+slotOrElement):slotOrElement;
+  requestAnimationFrame(()=>ensureAboveBottomNav(el,extra,'smooth'));
+}
 
 function closePhotoPartMenus(except){
   document.querySelectorAll('.photoPartControl.open').forEach(el=>{if(el!==except){el.classList.remove('open');el.classList.remove('openUp');}});
@@ -1601,15 +1745,16 @@ function togglePhotoPartMenu(event,id){
   const willOpen=!control.classList.contains('open');
   closePhotoPartMenus(control);
   control.classList.remove('openUp');
-  if(willOpen){
-    const rect=control.getBoundingClientRect();
-    const bottomNav=document.querySelector('.tabs');
-    const navTop=bottomNav?bottomNav.getBoundingClientRect().top:window.innerHeight;
-    const estimatedMenuHeight=190;
-    if(rect.bottom+estimatedMenuHeight>navTop-8) control.classList.add('openUp');
-  }
   control.classList.toggle('open',willOpen);
-  control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded', String(willOpen));
+  control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded',String(willOpen));
+
+  if(willOpen){
+    /* All menus open downward. Scroll only when the complete menu would meet the bottom nav. */
+    requestAnimationFrame(()=>{
+      const menu=control.querySelector('.photoPartMenu');
+      ensureAboveBottomNav(menu||control,12,'smooth');
+    });
+  }
 }
 function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   event.stopPropagation();
@@ -1618,7 +1763,9 @@ function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   const label=control.querySelector('.photoPartBtn .photoPartText'); if(label) label.textContent=value;
   control.querySelectorAll('.photoPartOption').forEach(btn=>{const selected=btn.dataset.value===value;btn.classList.toggle('selected',selected);btn.setAttribute('aria-selected',String(selected));});
   control.classList.remove('open');
+  control.classList.remove('openUp');
   control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded','false');
+  ensurePhotoSlotVisible(slot,14);
   if(!isEmpty) updatePhotoPart(d,slot,value);
 }
 function photoPartControlHtml(d,slot,current,isEmpty){
@@ -1629,7 +1776,11 @@ function photoPartControlHtml(d,slot,current,isEmpty){
 }
 function openPhotoPicker(inputId){
   closePhotoPartMenus();
-  const input=document.getElementById(inputId); if(input) input.click();
+  const input=document.getElementById(inputId);
+  if(!input) return;
+  const slot=input.closest('.photoSlot');
+  ensurePhotoSlotVisible(slot,16);
+  setTimeout(()=>input.click(),120);
 }
 document.addEventListener('click',()=>closePhotoPartMenus());
 async function renderPhotos(){
@@ -1677,6 +1828,7 @@ async function addPhoto(e,d,slot){
     saveState();
     loadForm();
     await renderPhotos();
+    ensurePhotoSlotVisible(slot,16);
     await renderCompare();
   }catch(err){alert('사진 저장 중 오류가 발생했습니다. 다른 사진으로 다시 시도해보세요.');}
 }
