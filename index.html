@@ -1110,6 +1110,32 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
 .photoRegisterBtn:active,.photoChangeBtn:active{background:#f3f0ff !important;color:var(--accent) !important;}
 .photoDeleteBtn:active{background:#fff !important;color:var(--muted) !important;}
 
+
+
+/* Existing-photo part change: suppress Android/iOS pressed-layer repaint completely */
+.photoPartBtn,.photoPartOption{
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent!important;
+  -webkit-touch-callout:none!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  touch-action:none!important;
+  contain:paint;
+  isolation:isolate;
+}
+.photoPartBtn::before,.photoPartOption::before{content:none!important;display:none!important;}
+.photoPartBtn:active,.photoPartBtn:focus,.photoPartBtn:focus-visible,
+.photoPartOption:active,.photoPartOption:focus,.photoPartOption:focus-visible{
+  background-color:#fff!important;
+  outline:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+.photoPartOption.selected,.photoPartOption.selected:active,.photoPartOption.selected:focus{
+  background:#f3f0ff!important;
+  color:var(--accent)!important;
+}
 </style>
 </head>
 <body>
@@ -1508,7 +1534,9 @@ function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
 }
 function photoPartControlHtml(d,slot,current,isEmpty){
   const id=`photoPartControl_${d}_${slot}`;
-  return `<div class="photoPartControl" id="${id}" data-value="${current}"><button class="photoPartBtn" type="button" onclick="togglePhotoPartMenu(event,'${id}')"><span class="photoPartText">${current}</span></button><div class="photoPartMenu">${photoParts.map(x=>`<button class="photoPartOption ${x===current?'selected':''}" type="button" data-value="${x}" onclick="choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})">${x}</button>`).join('')}</div></div>`;
+  /* 모바일에서 button의 기본 눌림 레이어가 슬롯 전체를 다시 칠하는 현상을 피하기 위해
+     부위 선택 컨트롤은 버튼 태그 대신 포인터 전용 div로 렌더링합니다. */
+  return `<div class="photoPartControl" id="${id}" data-value="${current}"><div class="photoPartBtn" role="button" tabindex="0" onpointerdown="event.preventDefault();event.stopPropagation()" onpointerup="event.preventDefault();event.stopPropagation();togglePhotoPartMenu(event,'${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhotoPartMenu(event,'${id}')} "><span class="photoPartText">${current}</span></div><div class="photoPartMenu">${photoParts.map(x=>`<div class="photoPartOption ${x===current?'selected':''}" role="button" tabindex="0" data-value="${x}" onpointerdown="event.preventDefault();event.stopPropagation()" onpointerup="event.preventDefault();event.stopPropagation();choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})}">${x}</div>`).join('')}</div></div>`;
 }
 function openPhotoPicker(inputId){
   closePhotoPartMenus();
@@ -1563,7 +1591,30 @@ async function addPhoto(e,d,slot){
     await renderCompare();
   }catch(err){alert('사진 저장 중 오류가 발생했습니다. 다른 사진으로 다시 시도해보세요.');}
 }
-function updatePhotoPart(d,slot,part){let arr=dayData(d).photos||[];if(arr[slot]){arr[slot].part=part;state.days[d]={...dayData(d),photos:arr};saveState();renderCompare();renderPhotoTimeline();}}
+function updatePhotoPart(d,slot,part){
+  const arr=dayData(d).photos||[];
+  if(!arr[slot]) return;
+
+  /* 부위명만 바꿀 때는 기록 화면 전체를 다시 그리지 않습니다.
+     전체 재렌더링이 사진 슬롯을 순간적으로 비웠다가 다시 채워
+     모바일에서 화면이 번쩍이는 것처럼 보이던 원인이었습니다. */
+  arr[slot].part=part;
+  state.days[d]={...dayData(d),photos:arr};
+  localStorage.setItem(KEY,JSON.stringify(state));
+
+  /* 현재 슬롯의 이미지 정보만 조용히 갱신합니다. */
+  const slotEl=document.getElementById('photoSlot'+slot);
+  const img=slotEl?.querySelector('img');
+  if(img){
+    img.alt=`Day ${d} ${part}`;
+    img.setAttribute('onclick',`openLightbox('${arr[slot].id}','Day ${d} ${part}')`);
+  }
+
+  /* 리포트가 실제로 열려 있을 때만 비교 영역을 갱신합니다. */
+  if(document.getElementById('report')?.classList.contains('active')){
+    renderCompare();
+  }
+}
 async function deletePhoto(d,slot){let arr=dayData(d).photos||[];if(!arr[slot])return;if(confirm('이 사진을 삭제할까요?')){await removePhotoData(arr[slot].id);arr[slot]=null;state.days[d]={...dayData(d),photos:arr};saveState();loadForm();await renderCompare();await renderPhotoTimeline();}}
 function allPhotosByPart(){
   const by={};
