@@ -1405,6 +1405,62 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   }
 }
 
+
+
+/* 2026-07-11 final approved: device-responsive bottom spacing + balanced carousel previews */
+/* Extra photo slots must not reserve a permanent bottom-nav-sized blank area. */
+#record .card.hasExtraPhotoSlots{
+  margin-bottom:14px !important;
+}
+
+/* The temporary dropdown space remains active only while a part menu is open. */
+#record .card.photoMenuSpace{
+  margin-bottom:calc(var(--bottom-nav-safe) + var(--open-photo-menu-height, 150px) + 18px) !important;
+}
+
+/* Keep one consistent card width and equal neighbouring-card hints on every device.
+   The real container width drives the card size; no phone-model-specific breakpoint is needed. */
+.photoRecordScroll.singleRecord,
+.photoRecordScroll.multiRecord{
+  --carousel-edge:24px;
+  --carousel-gap:5px;
+  display:flex !important;
+  justify-content:flex-start !important;
+  gap:var(--carousel-gap) !important;
+  padding:4px 0 8px !important;
+  scroll-padding-inline:var(--carousel-edge) !important;
+  overflow-x:auto !important;
+  scroll-snap-type:x mandatory !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+.photoRecordScroll::before,
+.photoRecordScroll::after{
+  content:"" !important;
+  display:block !important;
+  flex:0 0 var(--carousel-edge) !important;
+}
+.photoRecordScroll .photoRecordCard,
+.photoRecordScroll.singleRecord .photoRecordCard,
+.photoRecordScroll.multiRecord .photoRecordCard{
+  flex:0 0 calc(100% - (var(--carousel-edge) * 2)) !important;
+  width:calc(100% - (var(--carousel-edge) * 2)) !important;
+  max-width:none !important;
+  scroll-snap-align:center !important;
+  scroll-snap-stop:always !important;
+}
+.photoRecordScroll.singleRecord{
+  overflow-x:hidden !important;
+}
+
+/* Slightly narrower screens use the same visual balance instead of a separate fixed layout. */
+@media(max-width:380px){
+  .photoRecordScroll.singleRecord,
+  .photoRecordScroll.multiRecord{
+    --carousel-edge:22px;
+    --carousel-gap:5px;
+  }
+}
+
 </style>
 </head>
 <body>
