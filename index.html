@@ -415,14 +415,172 @@ body.modalLocked{position:fixed;width:100%;overflow:hidden;}
 .compareModal .compareGuideText{font-size:12px;color:var(--muted);line-height:1.45;text-align:center;margin:9px 0 0}
 @media (max-width:380px){.compareModal{padding:12px}.compareModalBox{padding:14px;border-radius:22px}.compareModal .sliderWrap{height:330px}.compareModalTop h3{font-size:17px}}
 
+
+
+/* Mobile interaction refinement */
+html{-webkit-tap-highlight-color:transparent;}
+body,button,label,input,textarea,select{-webkit-tap-highlight-color:transparent;}
+button,.btn,.tab,.daybtn,.choice,.chip,.check,.memoLine,.partBtn,.photoTab,.tinyBtn,.compareDetailBtn,.closeDetail,.closeCompareModal,.closeLightbox,.photoSlot.addSlot{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+button:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible),
+.tab:focus:not(:focus-visible),
+.daybtn:focus:not(:focus-visible),
+.choice:focus:not(:focus-visible),
+.chip:focus:not(:focus-visible),
+.memoLine:focus:not(:focus-visible),
+.partBtn:focus:not(:focus-visible),
+.photoTab:focus:not(:focus-visible){outline:none;box-shadow:none;}
+button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active,.memoLine:active,.partBtn:active,.photoTab:active,.tinyBtn:active,.compareDetailBtn:active{opacity:1;filter:none;transform:none;}
+
+.titleNumber{font-weight:900;font-family:inherit;}
+
+/* Routine checkbox: fixed row, no grey flash, drawn check animation */
+.check{position:relative;user-select:none;-webkit-user-select:none;transition:none!important;}
+.check:active{background:#fff!important;transform:none!important;}
+.check input{
+  appearance:none;-webkit-appearance:none;
+  width:20px;height:20px;flex:0 0 20px;
+  border:1.8px solid #cfd5e2;border-radius:5px;background:#fff;
+  position:relative;margin:0;outline:none;
+}
+.check input::after{
+  content:"";position:absolute;left:5px;top:2px;width:6px;height:11px;
+  border-right:2.4px solid var(--accent);border-bottom:2.4px solid var(--accent);
+  transform:rotate(45deg) scale(0);transform-origin:center;
+  opacity:0;
+}
+.check input:checked{border-color:var(--accent);background:#fff;}
+.check input:checked::after{animation:drawCheck .22s ease-out forwards;}
+@keyframes drawCheck{
+  0%{transform:rotate(45deg) scale(0);opacity:0;}
+  65%{transform:rotate(45deg) scale(1.08);opacity:1;}
+  100%{transform:rotate(45deg) scale(1);opacity:1;}
+}
+
+/* Selection controls: keep dimensions fixed */
+.choice,.chip,.partBtn,.photoTab{border-width:2px!important;transition:background-color .14s ease,border-color .14s ease,color .14s ease!important;}
+.choice{border-color:transparent!important;box-shadow:inset 0 0 0 1px var(--line);}
+.choice.selected{border-color:var(--accent)!important;box-shadow:none;}
+.chip,.partBtn,.photoTab{border-color:var(--line)!important;}
+.chip.selected,.partBtn.active,.photoTab.active{border-color:var(--accent)!important;}
+.choice:active,.chip:active,.partBtn:active,.photoTab:active{transform:none!important;}
+
+/* Memo rows: no long grey touch flash */
+.memoLine{-webkit-tap-highlight-color:transparent!important;background:transparent!important;}
+.memoLine:active{opacity:1!important;background:transparent!important;}
+
+
+/* Final confirmed UI refinements */
+.titleNumber,.reportNumber{font-weight:800!important;font-family:inherit;}
+.sectionSubTitle{margin-top:18px!important;margin-bottom:10px!important;}
+.sectionGroup{margin:0;}
+
+/* fixed bottom save toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));
+  transform:translate(-50%,12px);z-index:1200;
+  display:block!important;width:max-content;max-width:calc(100vw - 32px);
+  margin:0;padding:11px 16px;border-radius:999px;
+  background:rgba(31,41,55,.94);color:#fff;font-size:13px;font-weight:800;
+  box-shadow:0 12px 28px rgba(15,23,42,.22);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease,visibility 0s linear .18s;
+}
+.toast.show{opacity:1;visibility:visible;transform:translate(-50%,0);transition-delay:0s;}
+
+/* unified report box headings and detail modal section headings */
+#report .guideBox>h4{font-size:15px!important;font-weight:900!important;line-height:1.35!important;margin:0 0 10px!important;}
+.dayDetailBox .detailSection>h4{font-size:15px!important;font-weight:900!important;line-height:1.35!important;margin:0 0 10px!important;}
+.photoTab{font-size:15px!important;min-height:44px;padding:11px 12px!important;}
+
+/* compact photo controls */
+.photoSlot{overflow:visible;}
+.photoSlot img{margin-bottom:8px;cursor:zoom-in;}
+.photoActions{display:grid;grid-template-columns:minmax(0,1fr) auto 32px;gap:5px;align-items:center;margin-top:4px;}
+.photoActions select,.emptyPhotoMeta select{
+  width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;background:#fff;
+  padding:6px 22px 6px 6px;font-size:11px;color:var(--ink);
+}
+.photoChangeBtn,.photoRegisterBtn{
+  display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;
+  background:#f3f0ff;color:var(--accent);font-size:11px;font-weight:900;
+  min-height:32px;padding:6px 7px;cursor:pointer;white-space:nowrap;
+}
+.photoDeleteBtn{
+  width:32px;height:32px;padding:0;border:1px solid var(--line);border-radius:9px;
+  background:#fff;color:#6b7280;font-size:14px;display:flex;align-items:center;justify-content:center;
+}
+.emptyPhotoMeta{margin:0 0 8px!important;}
+.photoRegisterBtn{width:100%;}
+.addPhotoPlus{display:block;font-size:28px;line-height:1;color:var(--accent);font-weight:500;}
+.addPhotoText{display:block;margin-top:6px;font-size:11px;color:var(--accent);font-weight:900;}
+
+/* empty comparison: concise card + guide below */
+.emptyCompareCard{min-height:264px;}
+.emptyCompareCard strong{font-size:14px!important;color:var(--muted);}
+.compareWaitingGuide{font-size:12px;color:var(--muted);line-height:1.55;text-align:left;margin:10px 2px 0;}
+
+@media(max-width:380px){
+  .photoActions{grid-template-columns:minmax(0,1fr) auto 30px;gap:4px;}
+  .photoActions select{font-size:10.5px;padding-left:5px;}
+  .photoChangeBtn{font-size:10.5px;padding:5px 6px;}
+  .photoDeleteBtn{width:30px;height:30px;font-size:13px;}
+}
+
+
+/* 유수분 도움말 */
+.choiceTitleRow{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.choiceTitleRow .choiceTitle{margin-bottom:0}
+.infoBtn{width:20px;height:20px;border:0;background:transparent;color:var(--muted);font-size:17px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.infoBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:50%}
+.balanceHelp{display:none;margin:7px 0 0;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:#f8faff;color:var(--muted);font-size:12px;line-height:1.5}
+.balanceHelp.active{display:block}
+
+
+/* Next Day unlock: lock softly changes into the available purple outline */
+.daybtn.unlockReveal{
+  position:relative;
+  overflow:hidden;
+  animation:unlockDayReveal .42s ease-out both;
+}
+.daybtn.unlockReveal::after{
+  content:"🔒";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:inherit;
+  background:#f3eee8;
+  color:#b7aaa0;
+  animation:unlockLockFade .42s ease-out both;
+  pointer-events:none;
+}
+@keyframes unlockDayReveal{
+  0%{background:#f3eee8;border-color:var(--line);color:transparent;transform:scale(.97)}
+  58%{background:#faf8ff;border-color:#c4b5fd;color:transparent;transform:scale(1.015)}
+  100%{background:#f5f3ff;border-color:var(--accent);color:var(--accent);transform:scale(1)}
+}
+@keyframes unlockLockFade{
+  0%,38%{opacity:1}
+  100%{opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .daybtn.unlockReveal,.daybtn.unlockReveal::after{animation:none!important}
+  .daybtn.unlockReveal::after{display:none}
+}
+
 </style>
 </head>
 <body>
   <main class="app">
     <section class="top">
       <div class="eyebrow">2 WEEK SKIN TRACKER</div>
-      <h1 class="title">문제성 피부<br/>2주 관리 기록</h1>
-      <p class="sub">2주 동안 피부 변화를 기록하며 내 피부 상태를 꾸준히 확인해보세요.<br/>작은 변화도 꾸준히 기록하면 나에게 맞는 관리 방향을 찾는 데 도움이 됩니다.</p>
+      <h1 class="title">문제성 피부<br/><span class="titleNumber">2</span>주 관리 기록</h1>
+      <p class="sub">2주 동안 피부 변화를 기록하며 내 피부 상태를 꾸준히 확인해보세요. 작은 변화도 꾸준히 기록하면 나에게 맞는 관리 방향을 찾는 데 도움이 됩니다.</p>
     </section>
 
     <section id="home" class="view active">
@@ -449,28 +607,34 @@ body.modalLocked{position:fixed;width:100%;overflow:hidden;}
         <label class="check"><input type="checkbox" id="c3"> 기초 케어 루틴</label>
         <h3 class="section-title" style="margin-top:18px">피부 기록</h3>
         <div class="choiceGroup"><div class="choiceTitle">트러블</div><div class="choices" data-key="trouble"><button class="choice" data-val="감소"><span class="dot blue"></span>감소</button><button class="choice" data-val="유지"><span class="dot yellow"></span>유지</button><button class="choice" data-val="증가"><span class="dot red"></span>증가</button></div></div>
-        <div class="choiceGroup"><div class="choiceTitle">유수분</div><div class="choices" data-key="balance"><button class="choice" data-val="균형"><span class="dot blue"></span>균형</button><button class="choice" data-val="번들"><span class="dot yellow"></span>번들</button><button class="choice" data-val="건조"><span class="dot red"></span>건조</button></div></div>
+        <div class="choiceGroup"><div class="choiceTitleRow"><div class="choiceTitle">유수분</div><button class="infoBtn" type="button" aria-label="유수분 도움말" aria-expanded="false" aria-controls="balanceHelp" onclick="toggleBalanceHelp(event)">ⓘ</button></div><div class="choices" data-key="balance"><button class="choice" data-val="균형"><span class="dot blue"></span>균형</button><button class="choice" data-val="번들"><span class="dot yellow"></span>번들</button><button class="choice" data-val="건조"><span class="dot red"></span>건조</button></div><div class="balanceHelp" id="balanceHelp">가장 두드러진 유수분 상태를 선택해 주세요.</div></div>
         <div class="choiceGroup"><div class="choiceTitle">민감도</div><div class="choices" data-key="sensitive"><button class="choice" data-val="없음"><span class="dot blue"></span>없음</button><button class="choice" data-val="경미"><span class="dot yellow"></span>경미</button><button class="choice" data-val="심함"><span class="dot red"></span>심함</button></div></div>
         <div class="choiceGroup"><div class="choiceTitle">만족도</div><div class="choices" data-key="satisfaction"><button class="choice" data-val="낮음">낮음</button><button class="choice" data-val="보통">보통</button><button class="choice" data-val="좋음">좋음</button></div></div>
-        <div class="choiceGroup"><div class="choiceTitle">생활 요인</div><div class="chips" id="lifestyleChips"><button class="chip" data-val="수면 부족">🌙 수면 부족</button><button class="chip" data-val="수분 부족">💧 수분 부족</button><button class="chip" data-val="스트레스">⚡ 스트레스</button><button class="chip" data-val="음주">🍺 음주</button><button class="chip" data-val="자극적인 음식">🍔 자극적인 음식</button></div></div>
-        <div class="choiceTitle">나의 기록</div><textarea id="memo" maxlength="300" oninput="updateMemoCounter()" placeholder="오늘 피부 변화나 느낀 점, 남기고 싶은 말을 자유롭게 기록해보세요.
-예) 마스크 장시간 착용 후 여드름 생김, 생리 시작, 새로운 제품 사용, 피부를 자주 만짐"></textarea><div class="memoCounter" id="memoCounter">0 / 300</div>
-        <button class="btn" onclick="saveDay()">저장하기</button><div class="toast" id="toast">저장 완료</div>
+        <div class="choiceGroup sectionGroup"><h3 class="section-title sectionSubTitle">생활 요인</h3><div class="chips" id="lifestyleChips"><button class="chip" data-val="수면 부족">🌙 수면 부족</button><button class="chip" data-val="수분 부족">💧 수분 부족</button><button class="chip" data-val="스트레스">⚡ 스트레스</button><button class="chip" data-val="음주">🍺 음주</button><button class="chip" data-val="자극적인 음식">🍔 자극적인 음식</button></div></div>
+        <h3 class="section-title sectionSubTitle">나의 기록</h3><textarea id="memo" maxlength="300" oninput="updateMemoCounter()" placeholder="오늘 피부 변화나 느낀 점, 남기고 싶은 말을 자유롭게 기록해보세요.
+
+예)
+마스크 장시간 착용
+유분 증가
+새로운 제품 사용
+피부를 자주 만짐"></textarea><div class="memoCounter" id="memoCounter">0 / 300</div>
+        <button class="btn" onclick="saveDay()">저장하기</button><div class="toast" id="toast" role="status" aria-live="polite">✓ 오늘의 기록이 저장되었습니다.</div>
       </div>
       <div class="card"><h3 class="section-title">사진 기록</h3><p class="photoHelp"><strong class="photoMax">사진은 최대 5장까지 추가할 수 있습니다.</strong><br/><br/><strong class="photoTipTitle">📷 촬영 팁</strong><br/><span class="photoTipText">피부 변화를 정확하게 비교하려면 각도, 장소, 조명, 촬영 거리를 최대한 일정하게 유지해주세요. 사진 비교 화면에서 잘리지 않도록 적절한 거리를 유지해 촬영하는 것이 좋습니다.</span></p><div class="photoGrid" id="photoGrid"></div></div>
     </section>
 
     <section id="guide" class="view"><div class="card"><h3 class="section-title">💡 관리 점검 가이드</h3><p class="small" style="margin:0 0 12px">피부 변화를 기록하면서 함께 확인해볼 수 있는 관리 참고 가이드입니다.</p><div class="guideBox"><p class="small"><strong>세안 직후 당김·자극</strong> → 세정 강도가 강하지 않았는지 확인해보세요.</p><p class="small"><strong>세안 후 답답함</strong> → 세정력 부족 또는 클렌저 잔여감을 확인해보세요.</p><p class="small"><strong>속건조 + 겉번들</strong> → 피부가 수분 부족 상태는 아닌지 확인해보세요.</p><p class="small"><strong>기초 제품 사용 후 답답함·번들거림</strong> → 사용량이나 제품이 피부에 맞는지 점검해보세요.</p><p class="small"><strong>시간이 지나며 트러블 증가</strong> → 최근 사용한 제품이나 생활 습관의 변화를 함께 확인해보세요.</p><p class="small"><strong>갑작스러운 피부 변화</strong> → 날씨, 실내 환경, 수면이나 생활 패턴의 변화도 함께 확인해보세요.</p></div></div></section>
 
-    <section id="report" class="view"><div class="card"><h3 class="section-title">📊 14일 관리 리포트</h3><div id="reportContent"></div><button class="btn secondary" onclick="showView('record')">기록 계속하기</button><div class="reset" onclick="resetAll()">기록 초기화</div></div><div class="card"><h3 class="section-title">사진 비교 및 전체 기록</h3><div class="photoTabs"><button class="photoTab active" id="compareTab" onclick="showPhotoPanel('compare')">사진 비교</button><button class="photoTab" id="timelineTab" onclick="showPhotoPanel('timeline')">전체 기록</button></div><div id="photoComparePanel"><div id="partButtons" class="partButtons"></div><div id="compareArea"></div></div><div id="photoTimelinePanel" style="display:none"><div id="photoTimeline"></div></div></div></section>
+    <section id="report" class="view"><div class="card"><h3 class="section-title">📊 <span class="reportNumber">14</span>일 관리 리포트</h3><div id="reportContent"></div><button class="btn secondary" onclick="showView('record')">기록 계속하기</button><div class="reset" onclick="resetAll()">기록 초기화</div></div><div class="card"><h3 class="section-title">사진 비교 및 전체 기록</h3><div class="photoTabs"><button class="photoTab active" id="compareTab" onclick="showPhotoPanel('compare')">사진 비교</button><button class="photoTab" id="timelineTab" onclick="showPhotoPanel('timeline')">전체 기록</button></div><div id="photoComparePanel"><div id="partButtons" class="partButtons"></div><div id="compareArea"></div></div><div id="photoTimelinePanel" style="display:none"><div id="photoTimeline"></div></div></div></section>
   </main>
 
-  <div class="dayDetailModal" id="dayDetailModal" onclick="closeDayDetail()"><div class="dayDetailBox" onclick="event.stopPropagation()"><div class="dayDetailTop"><h3 id="dayDetailTitle">Day 기록 상세</h3><button class="closeDetail" type="button" onclick="closeDayDetail()">×</button></div><div id="dayDetailContent"></div></div></div>
+  <div class="dayDetailModal" id="dayDetailModal" onclick="closeDayDetail()"><div class="dayDetailBox" onclick="event.stopPropagation()"><div class="dayDetailTop"><h3 id="dayDetailTitle">Day 기록</h3><button class="closeDetail" type="button" onclick="closeDayDetail()">×</button></div><div id="dayDetailContent"></div></div></div>
   <div class="lightbox" id="lightbox" onclick="closeLightbox()"><button class="closeLightbox" type="button">×</button><div class="lightboxContent" onclick="event.stopPropagation()"><img id="lightboxImg" src="" alt="확대 사진"><div class="lightboxMeta" id="lightboxMeta"></div></div></div>
-  <div class="compareModal" id="compareModal" onclick="closeSliderModal()"><div class="compareModalBox" onclick="event.stopPropagation()"><div class="compareModalTop"><h3 id="compareModalTitle">사진 자세히 비교</h3><button class="closeCompareModal" type="button" onclick="closeSliderModal()">×</button></div><div id="compareModalContent"></div></div></div>
+  <div class="compareModal" id="compareModal" onclick="closeSliderModal()"><div class="compareModalBox" onclick="event.stopPropagation()"><div class="compareModalTop"><h3 id="compareModalTitle">사진 비교</h3><button class="closeCompareModal" type="button" onclick="closeSliderModal()">×</button></div><div id="compareModalContent"></div></div></div>
   <nav class="tabs"><button class="tab active" data-view="home"><span>🏠</span>홈</button><button class="tab" data-view="record"><span>📝</span>기록</button><button class="tab" data-view="report"><span>📈</span>리포트</button><button class="tab" data-view="guide"><span>💡</span>가이드</button></nav>
 <script>
 const KEY='skin14Challenge_v5_photo_tags';let state=JSON.parse(localStorage.getItem(KEY)||'{"selected":1,"days":{}}');
+let unlockAnimationDay=0;
 const vals={trouble:['감소','유지','증가'],balance:['균형','번들','건조'],sensitive:['없음','경미','심함']};
 function saveState(){localStorage.setItem(KEY,JSON.stringify(state));renderAll()}
 function dayData(d){return state.days[d]||{} }
@@ -482,7 +646,20 @@ function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
 function goRecordToday(){state.selected=today();showView('record');loadForm()}
 function selectDay(d){if(!isUnlocked(d)){alert('이전 Day를 완료하면 순서대로 열립니다.');return;}state.selected=d;loadForm();renderDayGrid();}
+
+function toggleBalanceHelp(event){
+  event?.stopPropagation();
+  const help=document.getElementById('balanceHelp');
+  const btn=event?.currentTarget || document.querySelector('.infoBtn[aria-controls="balanceHelp"]');
+  if(!help) return;
+  const open=!help.classList.contains('active');
+  help.classList.toggle('active',open);
+  if(btn) btn.setAttribute('aria-expanded',String(open));
+}
+
 function updateMemoCounter(){const el=document.getElementById('memo');const counter=document.getElementById('memoCounter');if(el&&counter) counter.textContent=`${el.value.length} / 300`;}
+let toastTimer=null;
+function showSaveToast(){const el=document.getElementById('toast');if(!el)return;clearTimeout(toastTimer);el.classList.remove('show');void el.offsetWidth;el.classList.add('show');toastTimer=setTimeout(()=>el.classList.remove('show'),1800);}
 function loadForm(){let d=dayData(state.selected);document.getElementById('recordTitle').textContent=`Day ${state.selected} / 14`;['c1','c2','c3'].forEach(k=>document.getElementById(k).checked=!!d[k]);document.getElementById('memo').value=d.memo||'';updateMemoCounter();document.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('#lifestyleChips .chip').forEach(b=>b.classList.remove('selected'));['trouble','balance','sensitive','satisfaction'].forEach(k=>{if(d[k]){let el=document.querySelector(`.choices[data-key="${k}"] .choice[data-val="${d[k]}"]`);if(el)el.classList.add('selected')}});(d.lifestyle||[]).forEach(v=>{let el=document.querySelector(`#lifestyleChips .chip[data-val="${v}"]`);if(el)el.classList.add('selected')});renderPhotos()}
 document.querySelectorAll('.choices .choice').forEach(btn=>btn.onclick=()=>{let group=btn.parentElement;group.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');});
 document.querySelectorAll('#lifestyleChips .chip').forEach(btn=>btn.onclick=()=>btn.classList.toggle('selected'));
@@ -494,14 +671,22 @@ function saveDay(){
   if(!c1.checked&&!c2.checked&&!c3.checked){alert('오늘의 루틴을 먼저 체크해주세요.');return;}
   if(!c3.checked){alert('기초 케어 루틴을 체크해주세요.');return;}
   if(!c1.checked&&!c2.checked){alert('클렌징 루틴을 체크해주세요.');return;}
-  if(!selectedVal('trouble')||!selectedVal('balance')||!selectedVal('sensitive')){alert('트러블, 유수분, 민감도를 모두 체크해주세요.');return;}
+  const skinFields=[['trouble','트러블'],['balance','유수분'],['sensitive','민감도']];
+  const missingSkin=skinFields.filter(([key])=>!selectedVal(key)).map(([,label])=>label);
+  if(missingSkin.length){
+    let msg='';
+    if(missingSkin.length===1) msg=`${missingSkin[0]}을 체크해주세요.`;
+    else if(missingSkin.length===2) msg=`${missingSkin[0]}과 ${missingSkin[1]}을 체크해주세요.`;
+    else msg='트러블, 유수분, 민감도를 모두 체크해주세요.';
+    alert(msg);return;
+  }
+  const wasComplete=isComplete(d);
   state.days[d]={...dayData(d),c1:c1.checked,c2:c2.checked,c3:c3.checked,trouble:selectedVal('trouble'),balance:selectedVal('balance'),sensitive:selectedVal('sensitive'),satisfaction:selectedVal('satisfaction'),lifestyle:selectedLifestyle(),memo:memo.value.trim().slice(0,300),savedAt:new Date().toISOString()};
+  if(!wasComplete && d<14) unlockAnimationDay=d+1;
   saveState();
-  document.getElementById('toast').style.display='block';
-  setTimeout(()=>toast.style.display='none',1600);
-  renderHome();renderDayGrid();renderTable();renderReport();
+  showSaveToast();
 }
-function renderDayGrid(){let html='', t=today();for(let i=1;i<=14;i++){let locked=!isUnlocked(i);let label=isComplete(i)?'✓':(locked?'🔒':i);html+=`<button class="daybtn ${isComplete(i)?'done':''} ${i===t&&!isComplete(i)?'current':''} ${locked?'locked':''} ${state.selected===i?'active':''}" onclick="selectDay(${i})">${label}</button>`;}document.getElementById('dayGrid').innerHTML=html}
+function renderDayGrid(){let html='', t=today(), animated=false;for(let i=1;i<=14;i++){let locked=!isUnlocked(i);let label=isComplete(i)?'✓':(locked?'🔒':i);let reveal=i===unlockAnimationDay&&!locked&&!isComplete(i);if(reveal)animated=true;html+=`<button class="daybtn ${isComplete(i)?'done':''} ${i===t&&!isComplete(i)?'current':''} ${locked?'locked':''} ${state.selected===i?'active':''} ${reveal?'unlockReveal':''}" onclick="selectDay(${i})">${label}</button>`;}document.getElementById('dayGrid').innerHTML=html;if(animated)setTimeout(()=>{unlockAnimationDay=0;},500)}
 function renderHome(){let c=completed();todayText.textContent=c>=14?'Day 14 / 14':`Day ${c} / 14`;leftText.textContent=c>=14?'완료':`${14-c}일 남음`;progressBar.style.width=(c/14*100)+'%';progressText.textContent=`${c} / 14일 완료`}
 function mark(val,type){if(!val)return '-';let cls=(val==='감소'||val==='균형'||val==='없음')?'blue':(val==='유지'||val==='번들'||val==='경미')?'yellow':'red';return `<span class="dot ${cls}"></span>${val}`}
 function renderTable(){return;}
@@ -527,7 +712,7 @@ function escHtml(str){return String(str||'').replace(/[&<>'"]/g,ch=>({'&':'&amp;
 function detailRow(label,value){return `<b>${label}</b><span>${value||'-'}</span>`;}
 async function openDayDetail(day){
   const d=dayData(day);
-  dayDetailTitle.textContent=`Day ${day} 기록 상세`;
+  dayDetailTitle.textContent=`Day ${day} 기록`;
   const savedDate=formatPhotoDate(d.savedAt);
   const dateHtml=savedDate?`<div class="dayDetailDate">기록일 ${savedDate}</div>`:'';
   const routineItem=(done,label)=>`<div class="detailCheck ${done?'done':'missed'}"><span class="routineMark">${done?'✓':'✕'}</span> ${label}</div>`;
@@ -706,10 +891,10 @@ function renderReport(){
   let memoRows=[];
   for(let i=1;i<=14;i++){
     let m=dayData(i).memo;
-    if(m) memoRows.push(`<button class="small memoLine" type="button" onclick="openDayDetail(${i})" title="Day ${i} 기록 상세 보기"><strong>Day ${i}</strong> : ${escHtml(m)}</button>`);
+    if(m) memoRows.push(`<button class="small memoLine" type="button" onclick="openDayDetail(${i})" title="Day ${i} 기록 보기"><strong>Day ${i}</strong> : ${escHtml(m)}</button>`);
   }
   let memoHtml=memoRows.length
-    ? `<div class="guideBox"><h4>나의 기록</h4><div class="memoScroll">${memoRows.join('')}</div><p class="reportNote reportInfoText">Day를 누르면 상세 기록을 확인할 수 있습니다.</p></div>`
+    ? `<div class="guideBox"><h4>나의 기록</h4><div class="memoScroll">${memoRows.join('')}</div><p class="reportNote reportInfoText">기록을 누르면 해당 날짜의 내용을 확인할 수 있습니다.</p></div>`
     : `<div class="guideBox"><h4>나의 기록</h4><p class="small" style="margin:0">아직 작성된 기록이 없습니다.</p></div>`;
   reportContent.innerHTML=`${reportTimeline()}${reportSummaryStats()}${lifestyleHtml}${memoHtml}`;
   renderCompare();
@@ -760,9 +945,9 @@ async function renderPhotos(){
   let html='';
   for(let i=0;i<n;i++){
     const p=slots[i]; const defaultPart=photoParts[i]||'정면';
-    html+=`<div class="photoSlot" id="photoSlot${i}">${p?'<div class="small loadingText">사진 불러오는 중...</div>':''}${!p?`<div class="photoMeta" style="margin-bottom:7px"><select id="partSelect${i}">${photoParts.map(x=>`<option value="${x}" ${defaultPart===x?'selected':''}>${x}</option>`).join('')}</select></div><label>사진 등록<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}${p?`<div class="photoMeta"><select onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><button class="tinyBtn" onclick="deletePhoto(${d},${i})">삭제</button></div><label>사진 변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}</div>`;
+    html+=`<div class="photoSlot" id="photoSlot${i}">${p?'<div class="small loadingText">사진 불러오는 중...</div>':''}${!p?`<div class="photoMeta emptyPhotoMeta"><select id="partSelect${i}">${photoParts.map(x=>`<option value="${x}" ${defaultPart===x?'selected':''}>${x}</option>`).join('')}</select></div><label class="photoRegisterBtn">사진 등록<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}${p?`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" aria-label="사진 삭제" title="사진 삭제" onclick="deletePhoto(${d},${i})">🗑</button></div>`:''}</div>`;
   }
-  if(n<5) html+=`<button class="photoSlot addSlot" type="button" onclick="addPhotoSlot()"><strong>＋ 사진 추가</strong></button>`;
+  if(n<5) html+=`<button class="photoSlot addSlot" type="button" onclick="addPhotoSlot()"><strong class="addPhotoPlus">＋</strong><span class="addPhotoText">사진 추가</span></button>`;
   photoGrid.innerHTML=html;
   for(let i=0;i<n;i++){
     const p=slots[i]; if(!p) continue;
@@ -770,8 +955,8 @@ async function renderPhotos(){
     if(seq!==photoRenderSeq || d!==state.selected) return;
     const slot=document.getElementById('photoSlot'+i);
     if(slot && src){
-      const controls=`<div class="photoMeta"><select onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><button class="tinyBtn" onclick="deletePhoto(${d},${i})">삭제</button></div><label>사진 변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`;
-      slot.innerHTML=`<img src="${src}" alt="Day ${d} ${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')"><div class="small"><strong>${p.part||'부위 선택'}</strong></div>${controls}`;
+      const controls=`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" aria-label="사진 삭제" title="사진 삭제" onclick="deletePhoto(${d},${i})">🗑</button></div>`;
+      slot.innerHTML=`<img src="${src}" alt="Day ${d} ${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')">${controls}`;
     }else if(slot){
       slot.querySelector('.loadingText')?.remove();
     }
@@ -927,7 +1112,7 @@ async function renderCompareArea(){
     const only=items[0];
     const src=await safeGetPhoto(only.photo.id);
     const meta=`Day ${only.day} ${escapeAttrText(part)}`;
-    area.innerHTML=`<div class="compareEmptyBox"><strong>${escapeAttrText(part)} 사진 비교</strong><div class="beforeAfterGrid"><div class="beforeAfterCard">${src?`<img src="${src}" alt="${meta}" onclick="openLightbox('${only.photo.id}','${meta}')">`:''}<strong>${dayDateLabel(only)}</strong><span>${formatPhotoDate(only.photo.savedAt)}</span></div><div class="beforeAfterCard emptyCompareCard"><strong>비교 대기</strong><span>다른 날짜의 사진을 등록하면 비교할 수 있습니다.</span></div></div></div>`;
+    area.innerHTML=`<div class="compareEmptyBox"><strong>${escapeAttrText(part)} 사진 비교</strong><div class="beforeAfterGrid"><div class="beforeAfterCard">${src?`<img src="${src}" alt="${meta}" onclick="openLightbox('${only.photo.id}','${meta}')">`:''}<strong>${dayDateLabel(only)}</strong><span>${formatPhotoDate(only.photo.savedAt)}</span></div><div class="beforeAfterCard emptyCompareCard"><strong>비교 대기</strong></div></div><p class="compareWaitingGuide">같은 부위의 다른 날짜 사진을 등록하면 비교할 수 있습니다.</p></div>`;
     return;
   }
   const [first,last]=pair;
@@ -945,7 +1130,7 @@ function openSliderModal(){
   if(!currentSliderCompare) return;
   modalScrollY=window.scrollY || document.documentElement.scrollTop || 0;
   const {first,last,src1,src2,part}=currentSliderCompare;
-  compareModalTitle.textContent=`${part} 자세히 비교`;
+  compareModalTitle.textContent=`${part} 사진 비교`;
   compareModalContent.innerHTML=`<div class="compareLabels"><div class="labelBox">${dayDateLabel(first)}<br><span class="small">${part}</span></div><div class="labelBox">${dayDateLabel(last)}<br><span class="small">${part}</span></div></div><div class="sliderWrap" id="modalSliderWrap"><img src="${src1}" alt="Day ${first.day} ${part}"><img class="afterImg" id="modalAfterImg" src="${src2}" alt="Day ${last.day} ${part}"><div class="sliderLine" id="modalSliderLine"></div><div class="sliderHandle" id="modalSliderHandle">↔</div></div><div class="compareDateLabels"><div class="dateBox">${formatPhotoDate(first.photo.savedAt)}</div><div class="dateBox">${formatPhotoDate(last.photo.savedAt)}</div></div><p class="compareGuideText">가운데 선을 좌우로 움직여 두 사진을 비교해보세요.</p>`;
   document.body.style.top=`-${modalScrollY}px`;
   document.body.classList.add('modalLocked');
