@@ -848,6 +848,180 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   #compareArea > .comparisonState .beforeAfterCard{height:254px !important;min-height:254px !important;}
 }
 
+
+
+/* 2026-07-10 사진 기록 컨트롤 최종 수정: 폭 축소 + 모바일 회색 터치 플래시 제거 */
+.emptyPhotoMeta select,
+.photoActions > select,
+.photoRegisterBtn{
+  width:66px !important;
+  max-width:66px !important;
+  min-width:66px !important;
+}
+.photoRegisterBtn{
+  padding:7px 4px !important;
+  white-space:nowrap !important;
+}
+
+/* 사진 기록 영역의 모든 클릭 컨트롤은 모바일에서 회색 사각형/리플이 보이지 않게 고정 */
+.photoSlot,
+.photoSlot *,
+.photoSlot select,
+.photoSlot label,
+.photoSlot button,
+.photoRegisterBtn,
+.photoChangeBtn,
+.photoDeleteBtn{
+  -webkit-tap-highlight-color:rgba(0,0,0,0) !important;
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  touch-action:manipulation !important;
+}
+.photoSlot select,
+.photoSlot button,
+.photoRegisterBtn,
+.photoChangeBtn,
+.photoDeleteBtn{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+}
+.photoSlot select:focus,
+.photoSlot select:focus-visible,
+.photoSlot select:active{
+  outline:0 !important;
+  box-shadow:none !important;
+  background-color:#fff !important;
+  color:var(--ink) !important;
+}
+.photoRegisterBtn:focus,
+.photoRegisterBtn:focus-visible,
+.photoRegisterBtn:active,
+.photoChangeBtn:focus,
+.photoChangeBtn:focus-visible,
+.photoChangeBtn:active{
+  outline:0 !important;
+  box-shadow:none !important;
+  background:#f3f0ff !important;
+  color:var(--accent) !important;
+  opacity:1 !important;
+}
+.photoDeleteBtn:focus,
+.photoDeleteBtn:focus-visible,
+.photoDeleteBtn:active{
+  outline:0 !important;
+  box-shadow:none !important;
+  background:#fff !important;
+  color:var(--muted) !important;
+  opacity:1 !important;
+}
+@media(max-width:380px){
+  .emptyPhotoMeta select,
+  .photoActions > select,
+  .photoRegisterBtn{
+    width:62px !important;
+    max-width:62px !important;
+    min-width:62px !important;
+  }
+  .photoRegisterBtn{font-size:10.5px !important;}
+}
+
+
+
+/* Final comparison spacing correction: identical photo start, no unused lower space */
+#compareArea > .comparisonState{
+  display:grid !important;
+  grid-template-rows:auto auto auto !important;
+  row-gap:10px !important;
+  width:100% !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin-top:10px !important;
+  padding:14px !important;
+  border:1px solid var(--line) !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-sizing:border-box !important;
+}
+#compareArea > .comparisonState > h4{
+  margin:0 !important;
+  min-height:20px !important;
+  padding:0 !important;
+}
+#compareArea > .comparisonState .beforeAfterGrid{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  align-items:stretch !important;
+}
+#compareArea > .comparisonState .beforeAfterCard{
+  width:100% !important;
+  height:auto !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:9px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+  box-sizing:border-box !important;
+}
+#compareArea > .comparisonState .beforeAfterCard img{
+  width:100% !important;
+  height:190px !important;
+  flex:0 0 190px !important;
+  margin:0 !important;
+  display:block !important;
+}
+#compareArea > .comparisonState .beforeAfterCard strong{
+  margin:8px 0 0 !important;
+  line-height:1.25 !important;
+}
+#compareArea > .comparisonState .beforeAfterCard span{
+  margin:3px 0 0 !important;
+  line-height:1.25 !important;
+}
+#compareArea > .comparisonState .emptyCompareCard{
+  min-height:0 !important;
+  align-self:stretch !important;
+  justify-content:center !important;
+}
+#compareArea > .comparisonState .compareDetailBtn{
+  width:100% !important;
+  height:44px !important;
+  min-height:44px !important;
+  margin:0 !important;
+}
+#compareArea > .comparisonState .compareWaitingGuide{
+  width:100% !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:2px 2px 0 !important;
+  display:block !important;
+  line-height:1.45 !important;
+}
+@media(max-width:380px){
+  #compareArea > .comparisonState{
+    row-gap:9px !important;
+    padding:12px !important;
+  }
+  #compareArea > .comparisonState .beforeAfterGrid{gap:8px !important;}
+  #compareArea > .comparisonState .beforeAfterCard{padding:7px !important;}
+  #compareArea > .comparisonState .beforeAfterCard img{
+    height:160px !important;
+    flex-basis:160px !important;
+  }
+}
+
 </style>
 </head>
 <body>
