@@ -703,6 +703,151 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   #report .memoScroll{max-height:130px !important;}
 }
 
+
+/* Final photo controls + comparison height correction */
+/* Part selector and register button use the same compact width. */
+.emptyPhotoMeta select,
+.photoActions > select,
+.photoRegisterBtn{
+  width:82px !important;
+  max-width:82px !important;
+  min-width:0 !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  text-align:center !important;
+  text-align-last:center !important;
+  padding-left:8px !important;
+  padding-right:22px !important;
+  white-space:nowrap !important;
+}
+.photoRegisterBtn{
+  min-height:34px !important;
+  padding:7px 6px !important;
+}
+.photoActions{width:100% !important;}
+
+/* Remove dark mobile tap flashes from all photo controls. */
+.photoSlot select,
+.photoRegisterBtn,
+.photoChangeBtn,
+.photoDeleteBtn,
+.photoSlot label,
+.photoSlot button{
+  -webkit-tap-highlight-color:transparent !important;
+  tap-highlight-color:transparent !important;
+  touch-action:manipulation !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  outline:none !important;
+}
+.photoSlot select:focus,
+.photoSlot select:active,
+.photoRegisterBtn:focus,
+.photoRegisterBtn:active,
+.photoChangeBtn:focus,
+.photoChangeBtn:active,
+.photoDeleteBtn:focus,
+.photoDeleteBtn:active{
+  outline:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+}
+.photoRegisterBtn:active,.photoChangeBtn:active{background:#f3f0ff !important;color:var(--accent) !important;}
+.photoDeleteBtn:active{background:#fff !important;color:var(--muted) !important;}
+
+/* Comparison: remove stretched blank space and equalize both states naturally. */
+#compareArea > .guideBox,
+#compareArea > .compareEmptyBox{
+  min-height:0 !important;
+  height:auto !important;
+  display:block !important;
+}
+#compareArea .beforeAfterGrid{
+  height:284px !important;
+  min-height:284px !important;
+  align-items:stretch !important;
+}
+#compareArea .beforeAfterCard{
+  height:284px !important;
+  min-height:284px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:flex-start !important;
+}
+#compareArea .beforeAfterCard img{
+  height:190px !important;
+  flex:0 0 190px !important;
+}
+#compareArea .emptyCompareCard{
+  justify-content:center !important;
+}
+#compareArea .compareDetailBtn,
+#compareArea .compareWaitingGuide{
+  min-height:44px !important;
+  margin-top:12px !important;
+  margin-bottom:0 !important;
+}
+#compareArea .compareWaitingGuide{
+  display:flex !important;
+  align-items:center !important;
+}
+@media(max-width:380px){
+  .emptyPhotoMeta select,.photoActions > select,.photoRegisterBtn{width:76px !important;max-width:76px !important;}
+  #compareArea .beforeAfterGrid{height:254px !important;min-height:254px !important;}
+  #compareArea .beforeAfterCard{height:254px !important;min-height:254px !important;}
+  #compareArea .beforeAfterCard img{height:160px !important;flex-basis:160px !important;}
+}
+
+
+/* Final comparison layout: completed and waiting states use identical vertical structure */
+#compareArea > .comparisonState{
+  display:grid !important;
+  grid-template-rows:auto 284px 44px !important;
+  row-gap:12px !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:14px !important;
+}
+#compareArea > .comparisonState > h4{
+  margin:0 !important;
+  min-height:20px !important;
+  display:flex !important;
+  align-items:center !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  line-height:1.35 !important;
+}
+#compareArea > .comparisonState .beforeAfterGrid{
+  height:284px !important;
+  min-height:284px !important;
+  margin:0 !important;
+  align-items:stretch !important;
+}
+#compareArea > .comparisonState .beforeAfterCard{
+  height:284px !important;
+  min-height:284px !important;
+}
+#compareArea > .comparisonState .compareDetailBtn,
+#compareArea > .comparisonState .compareWaitingGuide{
+  width:100% !important;
+  height:44px !important;
+  min-height:44px !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+}
+#compareArea > .comparisonState .compareWaitingGuide{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  padding:0 2px !important;
+}
+@media(max-width:380px){
+  #compareArea > .comparisonState{grid-template-rows:auto 254px 44px !important;}
+  #compareArea > .comparisonState .beforeAfterGrid,
+  #compareArea > .comparisonState .beforeAfterCard{height:254px !important;min-height:254px !important;}
+}
+
 </style>
 </head>
 <body>
@@ -1253,7 +1398,7 @@ async function renderCompareArea(){
     const only=items[0];
     const src=await safeGetPhoto(only.photo.id);
     const meta=`Day ${only.day} ${escapeAttrText(part)}`;
-    area.innerHTML=`<div class="compareEmptyBox"><strong>${escapeAttrText(part)} 사진 비교</strong><div class="beforeAfterGrid"><div class="beforeAfterCard">${src?`<img src="${src}" alt="${meta}" onclick="openLightbox('${only.photo.id}','${meta}')">`:''}<strong>${dayDateLabel(only)}</strong><span>${formatPhotoDate(only.photo.savedAt)}</span></div><div class="beforeAfterCard emptyCompareCard"><strong>비교 대기</strong></div></div><p class="compareWaitingGuide">같은 부위의 다른 날짜 사진을 등록하면 비교할 수 있습니다.</p></div>`;
+    area.innerHTML=`<div class="compareEmptyBox comparisonState"><h4>${escapeAttrText(part)} 사진 비교</h4><div class="beforeAfterGrid"><div class="beforeAfterCard">${src?`<img src="${src}" alt="${meta}" onclick="openLightbox('${only.photo.id}','${meta}')">`:''}<strong>${dayDateLabel(only)}</strong><span>${formatPhotoDate(only.photo.savedAt)}</span></div><div class="beforeAfterCard emptyCompareCard"><strong>비교 대기</strong></div></div><p class="compareWaitingGuide">같은 부위의 다른 날짜 사진을 등록하면 비교할 수 있습니다.</p></div>`;
     return;
   }
   const [first,last]=pair;
@@ -1265,7 +1410,7 @@ async function renderCompareArea(){
   }
   const partEsc=escapeAttrText(part);
   currentSliderCompare={first,last,src1,src2,part:partEsc};
-  area.innerHTML=`<div class="guideBox"><h4>${partEsc} 사진 비교</h4><div class="beforeAfterGrid"><div class="beforeAfterCard"><img src="${src1}" alt="Day ${first.day} ${partEsc}" onclick="openLightbox('${first.photo.id}','Day ${first.day} ${partEsc}')"><strong>${dayDateLabel(first)}</strong><span>${formatPhotoDate(first.photo.savedAt)}</span></div><div class="beforeAfterCard"><img src="${src2}" alt="Day ${last.day} ${partEsc}" onclick="openLightbox('${last.photo.id}','Day ${last.day} ${partEsc}')"><strong>${dayDateLabel(last)}</strong><span>${formatPhotoDate(last.photo.savedAt)}</span></div></div><button class="compareDetailBtn" id="sliderToggleBtn" type="button" onclick="openSliderModal()">🔍 자세히 비교하기</button></div>`;
+  area.innerHTML=`<div class="guideBox comparisonState"><h4>${partEsc} 사진 비교</h4><div class="beforeAfterGrid"><div class="beforeAfterCard"><img src="${src1}" alt="Day ${first.day} ${partEsc}" onclick="openLightbox('${first.photo.id}','Day ${first.day} ${partEsc}')"><strong>${dayDateLabel(first)}</strong><span>${formatPhotoDate(first.photo.savedAt)}</span></div><div class="beforeAfterCard"><img src="${src2}" alt="Day ${last.day} ${partEsc}" onclick="openLightbox('${last.photo.id}','Day ${last.day} ${partEsc}')"><strong>${dayDateLabel(last)}</strong><span>${formatPhotoDate(last.photo.savedAt)}</span></div></div><button class="compareDetailBtn" id="sliderToggleBtn" type="button" onclick="openSliderModal()">🔍 자세히 비교하기</button></div>`;
 }
 function openSliderModal(){
   if(!currentSliderCompare) return;
