@@ -1461,6 +1461,85 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   }
 }
 
+
+/* 2026-07-11 isolated final fixes: no permanent blank space, balanced carousel, full modal shadow */
+/* Keep normal page spacing even when the fourth or fifth photo slot exists. */
+#record .card.hasExtraPhotoSlots{
+  margin-bottom:14px !important;
+}
+/* Only an open part menu may temporarily reserve extra document space. */
+#record .card.photoMenuSpace{
+  margin-bottom:calc(var(--bottom-nav-safe) + var(--open-photo-menu-height, 150px) + 18px) !important;
+}
+
+/* Photo-record carousel: preserve the current preview amount and center every card precisely. */
+.photoRecordScroll.singleRecord,
+.photoRecordScroll.multiRecord{
+  --carousel-edge:24px;
+  --carousel-gap:5px;
+  display:flex !important;
+  justify-content:flex-start !important;
+  gap:var(--carousel-gap) !important;
+  padding:4px 0 8px !important;
+  scroll-padding-inline:0 !important;
+  overflow-x:auto !important;
+  scroll-snap-type:x mandatory !important;
+  overscroll-behavior-x:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+.photoRecordScroll::before,
+.photoRecordScroll::after{
+  content:"" !important;
+  display:block !important;
+  flex:0 0 var(--carousel-edge) !important;
+}
+.photoRecordScroll .photoRecordCard,
+.photoRecordScroll.singleRecord .photoRecordCard,
+.photoRecordScroll.multiRecord .photoRecordCard{
+  flex:0 0 calc(100% - (var(--carousel-edge) * 2)) !important;
+  width:calc(100% - (var(--carousel-edge) * 2)) !important;
+  max-width:none !important;
+  scroll-snap-align:center !important;
+  scroll-snap-stop:always !important;
+}
+.photoRecordScroll.singleRecord{
+  overflow-x:hidden !important;
+}
+@media(max-width:380px){
+  .photoRecordScroll.singleRecord,
+  .photoRecordScroll.multiRecord{
+    --carousel-edge:22px;
+  }
+}
+
+/* Photo-comparison popup: leave real space around the box so its bottom shadow is not clipped. */
+.compareModal{
+  inset:0 !important;
+  width:100% !important;
+  height:100dvh !important;
+  padding:16px 14px calc(var(--bottom-nav-safe) + 28px) !important;
+  align-items:center !important;
+  overflow:visible !important;
+  box-sizing:border-box !important;
+}
+.compareModalBox{
+  max-height:calc(100dvh - var(--bottom-nav-safe) - 60px) !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  box-shadow:0 18px 42px rgba(15,23,42,.25) !important;
+  box-sizing:border-box !important;
+}
+@media(max-height:700px){
+  .compareModal{
+    padding-top:12px !important;
+    padding-bottom:calc(var(--bottom-nav-safe) + 22px) !important;
+  }
+  .compareModalBox{
+    max-height:calc(100dvh - var(--bottom-nav-safe) - 46px) !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2237,6 +2316,33 @@ function initSliderByIds(wrapId,afterId,lineId,handleId){
   wrap.onpointerup=e=>{wrap.onpointermove=null;};
   wrap.onpointercancel=e=>{wrap.onpointermove=null;};
 }
+function centerPhotoRecordCard(scroll, card, behavior='auto'){
+  if(!scroll||!card) return;
+  const target=card.offsetLeft-(scroll.clientWidth-card.offsetWidth)/2;
+  scroll.scrollTo({left:Math.max(0,target),behavior});
+}
+function initPhotoRecordCarousel(){
+  const scroll=document.querySelector('#photoTimeline .photoRecordScroll.multiRecord');
+  if(!scroll) return;
+  const cards=Array.from(scroll.querySelectorAll('.photoRecordCard'));
+  if(!cards.length) return;
+  let settleTimer=0;
+  const settle=()=>{
+    clearTimeout(settleTimer);
+    settleTimer=setTimeout(()=>{
+      const center=scroll.scrollLeft+scroll.clientWidth/2;
+      const nearest=cards.reduce((best,card)=>{
+        const cardCenter=card.offsetLeft+card.offsetWidth/2;
+        const dist=Math.abs(cardCenter-center);
+        return !best||dist<best.dist?{card,dist}:best;
+      },null);
+      if(nearest) centerPhotoRecordCard(scroll,nearest.card,'smooth');
+    },90);
+  };
+  scroll.addEventListener('scroll',settle,{passive:true});
+  requestAnimationFrame(()=>centerPhotoRecordCard(scroll,cards[0],'auto'));
+}
+
 async function renderPhotoTimeline(){
   const wrap=document.getElementById('photoTimeline'); if(!wrap) return;
   let days=[]; for(let i=1;i<=14;i++){if(getDayPhotos(i).length) days.push(i)}
@@ -2257,6 +2363,7 @@ async function renderPhotoTimeline(){
   if(days.length>1) html+='<p class="photoRecordHint">좌우로 밀어서 전체 사진 기록을 확인할 수 있습니다.</p>';
   html+='</div>';
   wrap.innerHTML=html;
+  requestAnimationFrame(initPhotoRecordCarousel);
 }
 async function openLightbox(id,meta){ const src=await getPhoto(id); if(!src) return; lightboxImg.src=src; lightboxMeta.textContent=meta||''; lightbox.classList.add('active'); }
 function closeLightbox(){ lightbox.classList.remove('active'); lightboxImg.src=''; }
