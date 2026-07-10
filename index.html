@@ -573,6 +573,77 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   .daybtn.unlockReveal::after{display:none}
 }
 
+
+/* Final requested refinements */
+.choiceGroup{position:relative;}
+.choiceTitleRow{gap:3px!important;position:relative;}
+.infoBtn{width:16px!important;height:16px!important;font-size:13px!important;flex:0 0 16px!important;}
+.balanceHelp{
+  display:block!important;position:absolute;left:54px;top:27px;z-index:30;
+  width:max-content;max-width:min(250px,calc(100vw - 86px));
+  margin:0!important;padding:8px 10px!important;border-radius:11px!important;
+  background:#fff!important;box-shadow:0 8px 22px rgba(15,23,42,.14);
+  opacity:0;visibility:hidden;transform:translateY(-3px);pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease,visibility 0s linear .14s;
+}
+.balanceHelp.active{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;transition-delay:0s;}
+
+.check input{
+  width:20px!important;height:20px!important;flex:0 0 20px!important;
+  border:1.5px solid #cfd5e2!important;border-radius:6px!important;background:#fff!important;
+  box-shadow:none!important;
+}
+.check input::after{
+  left:5px!important;top:2px!important;width:6px!important;height:11px!important;
+  border-right:2.3px solid #fff!important;border-bottom:2.3px solid #fff!important;
+  transform:rotate(45deg) scale(1)!important;opacity:0!important;animation:none!important;
+}
+.check input:checked{background:var(--accent)!important;border-color:var(--accent)!important;}
+.check input:checked::after{opacity:1!important;animation:none!important;}
+.check input.checkAnimate:checked::after{animation:drawWhiteCheck .22s ease-out!important;}
+@keyframes drawWhiteCheck{
+  0%{transform:rotate(45deg) scale(0)!important;opacity:0;}
+  70%{transform:rotate(45deg) scale(1.08)!important;opacity:1;}
+  100%{transform:rotate(45deg) scale(1)!important;opacity:1;}
+}
+
+.photoSlot{overflow:hidden!important;}
+.emptyPhotoMeta{display:flex!important;justify-content:center!important;margin:0 0 8px!important;}
+.emptyPhotoMeta select,.photoActions>select{
+  width:78%!important;max-width:none!important;text-align:center!important;text-align-last:center!important;
+  padding:7px 24px 7px 10px!important;font-size:12px!important;
+}
+.photoActions{display:flex!important;flex-direction:column!important;align-items:center!important;gap:7px!important;margin-top:5px!important;}
+.photoActionButtons{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;}
+.photoChangeBtn,.photoDeleteBtn{
+  width:100%!important;min-height:32px!important;border-radius:9px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  font-size:11px!important;font-weight:900!important;padding:6px 7px!important;
+  -webkit-tap-highlight-color:transparent!important;touch-action:manipulation;
+}
+.photoChangeBtn{border:0!important;background:#f3f0ff!important;color:var(--accent)!important;}
+.photoDeleteBtn{height:auto!important;border:1px solid var(--line)!important;background:#fff!important;color:var(--muted)!important;}
+.photoRegisterBtn{-webkit-tap-highlight-color:transparent!important;touch-action:manipulation;}
+.photoRegisterBtn:active,.photoChangeBtn:active,.photoDeleteBtn:active{opacity:1!important;filter:none!important;transform:none!important;}
+
+#report .memoLine{font-size:12px!important;line-height:1.48!important;margin-bottom:8px!important;}
+#report .memoLine strong{font-size:12px!important;}
+
+
+/* Empty photo panels: keep compare and timeline card heights consistent */
+#photoComparePanel,
+#photoTimelinePanel{
+  min-height:56px;
+}
+#partButtons:empty{
+  display:none !important;
+  margin:0 !important;
+}
+#compareArea > p.small:only-child,
+#photoTimeline > p.small:only-child{
+  margin:12px 0 0 !important;
+}
+
 </style>
 </head>
 <body>
@@ -587,7 +658,6 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
       <div class="card">
         <div class="row"><div><div class="small">진행 현황</div><div class="bigday" id="todayText">Day 0 / 14</div></div><div class="pill" id="leftText">14일 남음</div></div>
         <div class="progress"><div class="bar" id="progressBar"></div></div>
-        <div class="small" id="progressText">0 / 14일 완료</div>
         <button class="btn" onclick="goRecordToday()">오늘 기록하기</button>
         <button class="btn secondary" onclick="showView('report')">리포트 보기</button>
       </div>
@@ -642,25 +712,38 @@ function isComplete(d){const x=dayData(d);return x.c3&&(x.c1||x.c2)&&x.trouble&&
 function completed(){let n=0;for(let i=1;i<=14;i++) if(isComplete(i)) n++;return n}
 function today(){for(let i=1;i<=14;i++) if(!isComplete(i)) return i;return 14}
 function isUnlocked(d){return d<=today() || isComplete(d)}
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));renderAll()}
+function showView(id){closeBalanceHelp();document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));renderAll()}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
 function goRecordToday(){state.selected=today();showView('record');loadForm()}
-function selectDay(d){if(!isUnlocked(d)){alert('이전 Day를 완료하면 순서대로 열립니다.');return;}state.selected=d;loadForm();renderDayGrid();}
+function selectDay(d){if(!isUnlocked(d)){alert('이전 Day를 완료하면 순서대로 열립니다.');return;}closeBalanceHelp();state.selected=d;loadForm();renderDayGrid();}
 
+function closeBalanceHelp(){
+  const help=document.getElementById('balanceHelp');
+  const btn=document.querySelector('.infoBtn[aria-controls="balanceHelp"]');
+  if(help) help.classList.remove('active');
+  if(btn) btn.setAttribute('aria-expanded','false');
+}
 function toggleBalanceHelp(event){
   event?.stopPropagation();
   const help=document.getElementById('balanceHelp');
   const btn=event?.currentTarget || document.querySelector('.infoBtn[aria-controls="balanceHelp"]');
   if(!help) return;
   const open=!help.classList.contains('active');
-  help.classList.toggle('active',open);
-  if(btn) btn.setAttribute('aria-expanded',String(open));
+  closeBalanceHelp();
+  if(open){help.classList.add('active');if(btn) btn.setAttribute('aria-expanded','true');}
 }
+document.addEventListener('click',event=>{
+  const help=document.getElementById('balanceHelp');
+  if(!help?.classList.contains('active')) return;
+  if(event.target.closest('.infoBtn')||event.target.closest('#balanceHelp')) return;
+  closeBalanceHelp();
+});
 
 function updateMemoCounter(){const el=document.getElementById('memo');const counter=document.getElementById('memoCounter');if(el&&counter) counter.textContent=`${el.value.length} / 300`;}
 let toastTimer=null;
 function showSaveToast(){const el=document.getElementById('toast');if(!el)return;clearTimeout(toastTimer);el.classList.remove('show');void el.offsetWidth;el.classList.add('show');toastTimer=setTimeout(()=>el.classList.remove('show'),1800);}
-function loadForm(){let d=dayData(state.selected);document.getElementById('recordTitle').textContent=`Day ${state.selected} / 14`;['c1','c2','c3'].forEach(k=>document.getElementById(k).checked=!!d[k]);document.getElementById('memo').value=d.memo||'';updateMemoCounter();document.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('#lifestyleChips .chip').forEach(b=>b.classList.remove('selected'));['trouble','balance','sensitive','satisfaction'].forEach(k=>{if(d[k]){let el=document.querySelector(`.choices[data-key="${k}"] .choice[data-val="${d[k]}"]`);if(el)el.classList.add('selected')}});(d.lifestyle||[]).forEach(v=>{let el=document.querySelector(`#lifestyleChips .chip[data-val="${v}"]`);if(el)el.classList.add('selected')});renderPhotos()}
+function loadForm(){closeBalanceHelp();let d=dayData(state.selected);document.getElementById('recordTitle').textContent=`Day ${state.selected} / 14`;['c1','c2','c3'].forEach(k=>document.getElementById(k).checked=!!d[k]);document.getElementById('memo').value=d.memo||'';updateMemoCounter();document.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('#lifestyleChips .chip').forEach(b=>b.classList.remove('selected'));['trouble','balance','sensitive','satisfaction'].forEach(k=>{if(d[k]){let el=document.querySelector(`.choices[data-key="${k}"] .choice[data-val="${d[k]}"]`);if(el)el.classList.add('selected')}});(d.lifestyle||[]).forEach(v=>{let el=document.querySelector(`#lifestyleChips .chip[data-val="${v}"]`);if(el)el.classList.add('selected')});renderPhotos()}
+document.querySelectorAll('.check input').forEach(input=>{input.addEventListener('change',()=>{input.classList.remove('checkAnimate');if(input.checked){void input.offsetWidth;input.classList.add('checkAnimate');setTimeout(()=>input.classList.remove('checkAnimate'),260);}});});
 document.querySelectorAll('.choices .choice').forEach(btn=>btn.onclick=()=>{let group=btn.parentElement;group.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');});
 document.querySelectorAll('#lifestyleChips .chip').forEach(btn=>btn.onclick=()=>btn.classList.toggle('selected'));
 function selectedVal(k){let el=document.querySelector(`.choices[data-key="${k}"] .choice.selected`);return el?el.dataset.val:''}
@@ -687,7 +770,7 @@ function saveDay(){
   showSaveToast();
 }
 function renderDayGrid(){let html='', t=today(), animated=false;for(let i=1;i<=14;i++){let locked=!isUnlocked(i);let label=isComplete(i)?'✓':(locked?'🔒':i);let reveal=i===unlockAnimationDay&&!locked&&!isComplete(i);if(reveal)animated=true;html+=`<button class="daybtn ${isComplete(i)?'done':''} ${i===t&&!isComplete(i)?'current':''} ${locked?'locked':''} ${state.selected===i?'active':''} ${reveal?'unlockReveal':''}" onclick="selectDay(${i})">${label}</button>`;}document.getElementById('dayGrid').innerHTML=html;if(animated)setTimeout(()=>{unlockAnimationDay=0;},500)}
-function renderHome(){let c=completed();todayText.textContent=c>=14?'Day 14 / 14':`Day ${c} / 14`;leftText.textContent=c>=14?'완료':`${14-c}일 남음`;progressBar.style.width=(c/14*100)+'%';progressText.textContent=`${c} / 14일 완료`}
+function renderHome(){let c=completed();todayText.textContent=c>=14?'Day 14 / 14':`Day ${c} / 14`;leftText.textContent=c>=14?'완료':`${14-c}일 남음`;progressBar.style.width=(c/14*100)+'%'}
 function mark(val,type){if(!val)return '-';let cls=(val==='감소'||val==='균형'||val==='없음')?'blue':(val==='유지'||val==='번들'||val==='경미')?'yellow':'red';return `<span class="dot ${cls}"></span>${val}`}
 function renderTable(){return;}
 function count(key,val){let n=0;for(let i=1;i<=14;i++) if(dayData(i)[key]===val)n++;return n}
@@ -945,7 +1028,7 @@ async function renderPhotos(){
   let html='';
   for(let i=0;i<n;i++){
     const p=slots[i]; const defaultPart=photoParts[i]||'정면';
-    html+=`<div class="photoSlot" id="photoSlot${i}">${p?'<div class="small loadingText">사진 불러오는 중...</div>':''}${!p?`<div class="photoMeta emptyPhotoMeta"><select id="partSelect${i}">${photoParts.map(x=>`<option value="${x}" ${defaultPart===x?'selected':''}>${x}</option>`).join('')}</select></div><label class="photoRegisterBtn">사진 등록<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}${p?`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" aria-label="사진 삭제" title="사진 삭제" onclick="deletePhoto(${d},${i})">🗑</button></div>`:''}</div>`;
+    html+=`<div class="photoSlot" id="photoSlot${i}">${p?'<div class="small loadingText">사진 불러오는 중...</div>':''}${!p?`<div class="photoMeta emptyPhotoMeta"><select id="partSelect${i}">${photoParts.map(x=>`<option value="${x}" ${defaultPart===x?'selected':''}>${x}</option>`).join('')}</select></div><label class="photoRegisterBtn">사진 등록<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label>`:''}${p?`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><div class="photoActionButtons"><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" onclick="deletePhoto(${d},${i})">삭제</button></div></div>`:''}</div>`;
   }
   if(n<5) html+=`<button class="photoSlot addSlot" type="button" onclick="addPhotoSlot()"><strong class="addPhotoPlus">＋</strong><span class="addPhotoText">사진 추가</span></button>`;
   photoGrid.innerHTML=html;
@@ -955,7 +1038,7 @@ async function renderPhotos(){
     if(seq!==photoRenderSeq || d!==state.selected) return;
     const slot=document.getElementById('photoSlot'+i);
     if(slot && src){
-      const controls=`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" aria-label="사진 삭제" title="사진 삭제" onclick="deletePhoto(${d},${i})">🗑</button></div>`;
+      const controls=`<div class="photoActions"><select aria-label="사진 부위 선택" onchange="updatePhotoPart(${d},${i},this.value)">${photoParts.map(x=>`<option value="${x}" ${p.part===x?'selected':''}>${x}</option>`).join('')}</select><div class="photoActionButtons"><label class="photoChangeBtn">변경<input type="file" accept="image/*" onchange="addPhoto(event,${d},${i})"></label><button class="photoDeleteBtn" type="button" onclick="deletePhoto(${d},${i})">삭제</button></div></div>`;
       slot.innerHTML=`<img src="${src}" alt="Day ${d} ${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')">${controls}`;
     }else if(slot){
       slot.querySelector('.loadingText')?.remove();
