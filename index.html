@@ -1157,6 +1157,44 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   margin-top:4px;
 }
 
+
+
+/* 2026-07-10 consolidated fixes */
+/* Bottom navigation always stays above photo-part dropdowns. */
+.tabs{z-index:3000!important;}
+.photoPartMenu{z-index:1400!important;}
+.photoPartControl.openUp .photoPartMenu{top:auto!important;bottom:38px!important;}
+
+/* Detail popup values, including an unselected satisfaction dash, share one centered column. */
+.detailGrid>span{display:block;text-align:center;}
+
+/* Empty states in photo compare and full-record tabs use identical spacing and typography. */
+.photoEmptyState{
+  margin:12px 0 0!important;
+  min-height:20px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.55;
+}
+
+/* Full photo record carousel: center one card; center the first card and leave a small next-card hint when scrollable. */
+.photoRecordScroll.singleRecord{justify-content:center;overflow-x:hidden;padding-left:2px;padding-right:2px;}
+.photoRecordScroll.multiRecord{
+  justify-content:flex-start;
+  padding-left:11%;
+  padding-right:11%;
+  scroll-padding-left:11%;
+  scroll-padding-right:11%;
+}
+.photoRecordScroll.multiRecord .photoRecordCard{flex-basis:78%;}
+@media(max-width:380px){
+  .photoRecordScroll.multiRecord{padding-left:9%;padding-right:9%;scroll-padding-left:9%;scroll-padding-right:9%;}
+  .photoRecordScroll.multiRecord .photoRecordCard{flex-basis:82%;}
+}
+
 </style>
 </head>
 <body>
@@ -1205,7 +1243,7 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
       <div class="card"><h3 class="section-title">사진 기록</h3><p class="photoHelp"><strong class="photoMax">사진은 최대 5장까지 추가할 수 있습니다.</strong><br/><br/><strong class="photoTipTitle">📷 촬영 팁</strong><br/><span class="photoTipText">피부 변화를 정확하게 비교하려면 각도, 장소, 조명, 촬영 거리를 최대한 일정하게 유지해주세요. 사진 비교 화면에서 잘리지 않도록 적절한 거리를 유지해 촬영하는 것이 좋습니다.</span></p><div class="photoGrid" id="photoGrid"></div></div>
     </section>
 
-    <section id="guide" class="view"><div class="card"><h3 class="section-title">💡 관리 점검 가이드</h3><p class="small" style="margin:0 0 12px">피부 변화를 기록하면서 함께 확인해볼 수 있는 관리 참고 가이드입니다.</p><div class="guideBox"><p class="small"><strong>세안 직후 당김·자극</strong> → 세정 강도가 강하지 않았는지 확인해보세요.</p><p class="small"><strong>세안 후 답답함</strong> → 세정력 부족 또는 클렌저 잔여감을 확인해보세요.</p><p class="small"><strong>속건조 + 겉번들</strong> → 피부가 수분 부족 상태는 아닌지 확인해보세요.</p><p class="small"><strong>기초 제품 사용 후 답답함·번들거림</strong> → 사용량이나 제품이 피부에 맞는지 점검해보세요.</p><p class="small"><strong>시간이 지나며 트러블 증가</strong> → 최근 사용한 제품이나 생활 습관의 변화를 함께 확인해보세요.</p><p class="small"><strong>갑작스러운 피부 변화</strong> → 날씨, 실내 환경, 수면이나 생활 패턴의 변화도 함께 확인해보세요.</p></div></div></section>
+    <section id="guide" class="view"><div class="card"><h3 class="section-title">💡 관리 점검 가이드</h3><p class="small" style="margin:0 0 12px">피부 변화를 기록하면서 함께 확인해볼 수 있는 관리 참고 가이드입니다.</p><div class="guideBox"><p class="small"><strong>세안 직후 당김·자극</strong> → 세정 강도가 강하지 않았는지 확인해보세요.</p><p class="small"><strong>세안 후 답답함</strong> → 세정력 부족 또는 클렌저 잔여감을 확인해보세요.</p><p class="small"><strong>속건조 + 겉번들</strong> → 피부가 수분 부족 상태는 아닌지 확인해보세요.</p><p class="small"><strong>기초 제품 사용 후 답답함·번들거림</strong> → 사용량이나 제품이 피부에 맞는지 점검해보세요.</p><p class="small"><strong>시간이 지나며 트러블 증가</strong> → 최근 사용한 제품이나 생활 습관의 변화를 함께 확인해보세요.</p><p class="small"><strong>갑작스러운 피부 변화</strong> → 최근 달라진 날씨나 실내 환경의 영향도 함께 확인해보세요.</p></div></div></section>
 
     <section id="report" class="view"><div class="card"><h3 class="section-title">📊 <span class="reportNumber">14</span>일 관리 리포트</h3><div id="reportContent"></div><button class="btn secondary" onclick="showView('record')">기록 계속하기</button><div class="reset" onclick="resetAll()">기록 초기화</div></div><div class="card"><h3 class="section-title">사진 비교 및 전체 기록</h3><div class="photoTabs"><button class="photoTab active" id="compareTab" onclick="showPhotoPanel('compare')">사진 비교</button><button class="photoTab" id="timelineTab" onclick="showPhotoPanel('timeline')">전체 기록</button></div><div id="photoComparePanel"><div id="partButtons" class="partButtons"></div><p class="compareAutoGuide">같은 부위의 가장 처음과 가장 최근 사진을 자동으로 비교합니다.</p><div id="compareArea"></div></div><div id="photoTimelinePanel" style="display:none"><div id="photoTimeline"></div></div></div></section>
   </main>
@@ -1224,7 +1262,16 @@ function isComplete(d){const x=dayData(d);return x.c3&&(x.c1||x.c2)&&x.trouble&&
 function completed(){let n=0;for(let i=1;i<=14;i++) if(isComplete(i)) n++;return n}
 function today(){for(let i=1;i<=14;i++) if(!isComplete(i)) return i;return 14}
 function isUnlocked(d){return d<=today() || isComplete(d)}
-function showView(id){closeBalanceHelp();document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));renderAll()}
+function showView(id){
+  closeBalanceHelp();
+  closePhotoPartMenus();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));
+  renderAll();
+  if(id==='record') loadForm();
+  requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
+}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>showView(t.dataset.view));
 function goRecordToday(){state.selected=today();showView('record');loadForm()}
 function selectDay(d){if(!isUnlocked(d)){alert('이전 Day를 완료하면 순서대로 열립니다.');return;}closeBalanceHelp();state.selected=d;loadForm();renderDayGrid();}
@@ -1514,6 +1561,17 @@ function photoDB(){
 async function putPhoto(id,data){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction(PHOTO_STORE,'readwrite');tx.objectStore(PHOTO_STORE).put(data,id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
 async function getPhoto(id){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction(PHOTO_STORE,'readonly');const r=tx.objectStore(PHOTO_STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
 async function removePhotoData(id){const db=await photoDB();return new Promise((res)=>{const tx=db.transaction(PHOTO_STORE,'readwrite');tx.objectStore(PHOTO_STORE).delete(id);tx.oncomplete=res;tx.onerror=res;});}
+async function clearAllPhotoData(){
+  try{
+    const db=await photoDB();
+    await new Promise((res)=>{
+      const tx=db.transaction(PHOTO_STORE,'readwrite');
+      tx.objectStore(PHOTO_STORE).clear();
+      tx.oncomplete=res;tx.onerror=res;tx.onabort=res;
+    });
+    db.close();
+  }catch(e){console.warn('photo reset failed',e);}
+}
 function readFileAsDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
 function loadImage(src){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=rej;img.src=src;});}
 async function compressPhoto(file){
@@ -1535,13 +1593,21 @@ function addPhotoSlot(){
 let photoRenderSeq=0;
 
 function closePhotoPartMenus(except){
-  document.querySelectorAll('.photoPartControl.open').forEach(el=>{if(el!==except) el.classList.remove('open');});
+  document.querySelectorAll('.photoPartControl.open').forEach(el=>{if(el!==except){el.classList.remove('open');el.classList.remove('openUp');}});
 }
 function togglePhotoPartMenu(event,id){
   event.stopPropagation();
   const control=document.getElementById(id); if(!control) return;
   const willOpen=!control.classList.contains('open');
   closePhotoPartMenus(control);
+  control.classList.remove('openUp');
+  if(willOpen){
+    const rect=control.getBoundingClientRect();
+    const bottomNav=document.querySelector('.tabs');
+    const navTop=bottomNav?bottomNav.getBoundingClientRect().top:window.innerHeight;
+    const estimatedMenuHeight=190;
+    if(rect.bottom+estimatedMenuHeight>navTop-8) control.classList.add('openUp');
+  }
   control.classList.toggle('open',willOpen);
   control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded', String(willOpen));
 }
@@ -1638,7 +1704,26 @@ function updatePhotoPart(d,slot,part){
     renderCompare();
   }
 }
-async function deletePhoto(d,slot){let arr=dayData(d).photos||[];if(!arr[slot])return;if(confirm('이 사진을 삭제할까요?')){await removePhotoData(arr[slot].id);arr[slot]=null;state.days[d]={...dayData(d),photos:arr};saveState();loadForm();await renderCompare();await renderPhotoTimeline();}}
+async function deletePhoto(d,slot){
+  let arr=(dayData(d).photos||[]).slice();
+  if(!arr[slot]) return;
+  if(!confirm('이 사진을 삭제할까요?')) return;
+  await removePhotoData(arr[slot].id);
+  if(slot>=3){
+    /* Extra slots are optional: deleting the 4th/5th photo removes that slot itself. */
+    arr.splice(slot,1);
+    while(arr.length>3 && arr[arr.length-1]===null) arr.pop();
+  }else{
+    /* The first three base slots always remain visible. */
+    arr[slot]=null;
+    while(arr.length>3 && arr[arr.length-1]===null) arr.pop();
+  }
+  state.days[d]={...dayData(d),photos:arr};
+  localStorage.setItem(KEY,JSON.stringify(state));
+  loadForm();
+  await renderCompare();
+  await renderPhotoTimeline();
+}
 function allPhotosByPart(){
   const by={};
   for(let d=1;d<=14;d++){
@@ -1686,6 +1771,8 @@ async function renderPartButtons(){
   const el=document.getElementById('partButtons'); if(!el) return;
   const by=allPhotosByPart();
   const available=photoParts.filter(p=>(by[p]||[]).length>0);
+  const guide=document.querySelector('.compareAutoGuide');
+  if(guide) guide.style.display=available.length?'block':'none';
   if(!available.length){
     currentComparePart='';
     el.innerHTML='';
@@ -1751,7 +1838,7 @@ async function renderCompareArea(){
   const available=photoParts.filter(p=>(by[p]||[]).length>0);
   if(!available.length){
     currentComparePart='';
-    area.innerHTML='<p class="small" style="margin-top:12px">아직 저장된 사진이 없습니다.</p>';
+    area.innerHTML='<p class="photoEmptyState">아직 저장된 사진이 없습니다.</p>';
     await renderPartButtons();
     return;
   }
@@ -1762,7 +1849,7 @@ async function renderCompareArea(){
   const part=currentComparePart;
   const items=(by[part]||[]).filter(x=>x&&x.photo&&x.photo.id).slice().sort((a,b)=>a.day-b.day || String(a.photo.savedAt||'').localeCompare(String(b.photo.savedAt||'')));
   if(!items.length){
-    area.innerHTML='<p class="small" style="margin-top:12px">아직 저장된 사진이 없습니다.</p>';
+    area.innerHTML='<p class="photoEmptyState">아직 저장된 사진이 없습니다.</p>';
     return;
   }
   const pair=firstAndLastDifferentDay(items);
@@ -1816,24 +1903,51 @@ function initSliderByIds(wrapId,afterId,lineId,handleId){
 async function renderPhotoTimeline(){
   const wrap=document.getElementById('photoTimeline'); if(!wrap) return;
   let days=[]; for(let i=1;i<=14;i++){if(getDayPhotos(i).length) days.push(i)}
-  if(!days.length){wrap.innerHTML='<p class="small">아직 저장된 사진이 없습니다.</p>';return;}
-  let html=`<div class="guideBox"><h4>전체 사진 기록</h4><div class="photoRecordScroll">`;
+  if(!days.length){wrap.innerHTML='<p class="photoEmptyState">아직 저장된 사진이 없습니다.</p>';return;}
+  const scrollClass=days.length===1?'singleRecord':'multiRecord';
+  let html=`<div class="guideBox"><h4>전체 사진 기록</h4><div class="photoRecordScroll ${scrollClass}">`;
   for(const d of days){
     const photos=getDayPhotos(d);
     let imgs='';
     for(const p of photos){
-      const src=await getPhoto(p.id);
+      const src=await safeGetPhoto(p.id);
       if(src) imgs+=`<img src="${src}" title="${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')">`;
     }
     const parts=photos.map(p=>p.part).filter(Boolean).join(', ');
     html+=`<div class="photoRecordCard"><div class="photoRecordTop"><strong>Day ${d}</strong><span>${photos.length}장</span></div><div class="photoRecordImgs">${imgs}</div>${parts?`<div class="photoRecordParts">${parts}</div>`:''}</div>`;
   }
-  html+=`</div><p class="photoRecordHint">좌우로 밀어서 전체 사진 기록을 확인할 수 있습니다.</p></div>`;
+  html+='</div>';
+  if(days.length>1) html+='<p class="photoRecordHint">좌우로 밀어서 전체 사진 기록을 확인할 수 있습니다.</p>';
+  html+='</div>';
   wrap.innerHTML=html;
 }
 async function openLightbox(id,meta){ const src=await getPhoto(id); if(!src) return; lightboxImg.src=src; lightboxMeta.textContent=meta||''; lightbox.classList.add('active'); }
 function closeLightbox(){ lightbox.classList.remove('active'); lightboxImg.src=''; }
-function resetAll(){if(confirm('모든 기록을 초기화할까요?')){localStorage.removeItem(KEY);state={selected:1,days:{}};renderAll();showView('home')}}
+async function resetAll(){
+  if(!confirm('모든 기록을 초기화할까요?')) return;
+  /* Invalidate any in-flight photo rendering before clearing persistent data. */
+  photoRenderSeq++;
+  localStorage.removeItem(KEY);
+  await clearAllPhotoData();
+  state={selected:1,days:{}};
+  unlockAnimationDay=0;
+  currentComparePart='';
+  currentPhotoPanel='compare';
+  currentSliderCompare=null;
+  closeBalanceHelp();
+  closePhotoPartMenus();
+  closeDayDetail();
+  closeLightbox();
+  closeSliderModal();
+  document.getElementById('compareTab')?.classList.add('active');
+  document.getElementById('timelineTab')?.classList.remove('active');
+  const cp=document.getElementById('photoComparePanel'),tp=document.getElementById('photoTimelinePanel');
+  if(cp) cp.style.display='block';
+  if(tp) tp.style.display='none';
+  loadForm();
+  renderAll();
+  showView('home');
+}
 function renderAll(){renderHome();renderDayGrid();renderTable();renderReport();renderPhotos()}state.selected=isUnlocked(state.selected)?state.selected:today();renderAll();loadForm();
 
 
