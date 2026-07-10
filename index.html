@@ -1144,6 +1144,19 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
 }
 .photoPartBtn{border:1px solid var(--line) !important;}
 
+/* Photo compare fixed automatic-selection guide */
+.compareAutoGuide{
+  margin:2px 2px 10px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:400;
+  line-height:1.5;
+  text-align:left;
+}
+#partButtons:empty + .compareAutoGuide{
+  margin-top:4px;
+}
+
 </style>
 </head>
 <body>
@@ -1194,7 +1207,7 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
 
     <section id="guide" class="view"><div class="card"><h3 class="section-title">💡 관리 점검 가이드</h3><p class="small" style="margin:0 0 12px">피부 변화를 기록하면서 함께 확인해볼 수 있는 관리 참고 가이드입니다.</p><div class="guideBox"><p class="small"><strong>세안 직후 당김·자극</strong> → 세정 강도가 강하지 않았는지 확인해보세요.</p><p class="small"><strong>세안 후 답답함</strong> → 세정력 부족 또는 클렌저 잔여감을 확인해보세요.</p><p class="small"><strong>속건조 + 겉번들</strong> → 피부가 수분 부족 상태는 아닌지 확인해보세요.</p><p class="small"><strong>기초 제품 사용 후 답답함·번들거림</strong> → 사용량이나 제품이 피부에 맞는지 점검해보세요.</p><p class="small"><strong>시간이 지나며 트러블 증가</strong> → 최근 사용한 제품이나 생활 습관의 변화를 함께 확인해보세요.</p><p class="small"><strong>갑작스러운 피부 변화</strong> → 날씨, 실내 환경, 수면이나 생활 패턴의 변화도 함께 확인해보세요.</p></div></div></section>
 
-    <section id="report" class="view"><div class="card"><h3 class="section-title">📊 <span class="reportNumber">14</span>일 관리 리포트</h3><div id="reportContent"></div><button class="btn secondary" onclick="showView('record')">기록 계속하기</button><div class="reset" onclick="resetAll()">기록 초기화</div></div><div class="card"><h3 class="section-title">사진 비교 및 전체 기록</h3><div class="photoTabs"><button class="photoTab active" id="compareTab" onclick="showPhotoPanel('compare')">사진 비교</button><button class="photoTab" id="timelineTab" onclick="showPhotoPanel('timeline')">전체 기록</button></div><div id="photoComparePanel"><div id="partButtons" class="partButtons"></div><div id="compareArea"></div></div><div id="photoTimelinePanel" style="display:none"><div id="photoTimeline"></div></div></div></section>
+    <section id="report" class="view"><div class="card"><h3 class="section-title">📊 <span class="reportNumber">14</span>일 관리 리포트</h3><div id="reportContent"></div><button class="btn secondary" onclick="showView('record')">기록 계속하기</button><div class="reset" onclick="resetAll()">기록 초기화</div></div><div class="card"><h3 class="section-title">사진 비교 및 전체 기록</h3><div class="photoTabs"><button class="photoTab active" id="compareTab" onclick="showPhotoPanel('compare')">사진 비교</button><button class="photoTab" id="timelineTab" onclick="showPhotoPanel('timeline')">전체 기록</button></div><div id="photoComparePanel"><div id="partButtons" class="partButtons"></div><p class="compareAutoGuide">같은 부위의 가장 처음과 가장 최근 사진을 자동으로 비교합니다.</p><div id="compareArea"></div></div><div id="photoTimelinePanel" style="display:none"><div id="photoTimeline"></div></div></div></section>
   </main>
 
   <div class="dayDetailModal" id="dayDetailModal" onclick="closeDayDetail()"><div class="dayDetailBox" onclick="event.stopPropagation()"><div class="dayDetailTop"><h3 id="dayDetailTitle">Day 기록</h3><button class="closeDetail" type="button" onclick="closeDayDetail()">×</button></div><div id="dayDetailContent"></div></div></div>
