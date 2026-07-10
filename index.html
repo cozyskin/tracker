@@ -1136,6 +1136,14 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   background:#f3f0ff!important;
   color:var(--accent)!important;
 }
+
+/* Part selector click recovery: keep normal mobile click behavior */
+.photoPartBtn,.photoPartOption{
+  touch-action:manipulation !important;
+  pointer-events:auto !important;
+}
+.photoPartBtn{border:1px solid var(--line) !important;}
+
 </style>
 </head>
 <body>
@@ -1522,21 +1530,23 @@ function togglePhotoPartMenu(event,id){
   const willOpen=!control.classList.contains('open');
   closePhotoPartMenus(control);
   control.classList.toggle('open',willOpen);
+  control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded', String(willOpen));
 }
 function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   event.stopPropagation();
   const control=document.getElementById(controlId); if(!control) return;
   control.dataset.value=value;
   const label=control.querySelector('.photoPartBtn .photoPartText'); if(label) label.textContent=value;
-  control.querySelectorAll('.photoPartOption').forEach(btn=>btn.classList.toggle('selected',btn.dataset.value===value));
+  control.querySelectorAll('.photoPartOption').forEach(btn=>{const selected=btn.dataset.value===value;btn.classList.toggle('selected',selected);btn.setAttribute('aria-selected',String(selected));});
   control.classList.remove('open');
+  control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded','false');
   if(!isEmpty) updatePhotoPart(d,slot,value);
 }
 function photoPartControlHtml(d,slot,current,isEmpty){
   const id=`photoPartControl_${d}_${slot}`;
   /* 모바일에서 button의 기본 눌림 레이어가 슬롯 전체를 다시 칠하는 현상을 피하기 위해
      부위 선택 컨트롤은 버튼 태그 대신 포인터 전용 div로 렌더링합니다. */
-  return `<div class="photoPartControl" id="${id}" data-value="${current}"><div class="photoPartBtn" role="button" tabindex="0" onpointerdown="event.preventDefault();event.stopPropagation()" onpointerup="event.preventDefault();event.stopPropagation();togglePhotoPartMenu(event,'${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePhotoPartMenu(event,'${id}')} "><span class="photoPartText">${current}</span></div><div class="photoPartMenu">${photoParts.map(x=>`<div class="photoPartOption ${x===current?'selected':''}" role="button" tabindex="0" data-value="${x}" onpointerdown="event.preventDefault();event.stopPropagation()" onpointerup="event.preventDefault();event.stopPropagation();choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})}">${x}</div>`).join('')}</div></div>`;
+  return `<div class="photoPartControl" id="${id}" data-value="${current}"><button class="photoPartBtn" type="button" aria-haspopup="listbox" aria-expanded="false" onclick="togglePhotoPartMenu(event,'${id}')"><span class="photoPartText">${current}</span></button><div class="photoPartMenu" role="listbox">${photoParts.map(x=>`<button class="photoPartOption ${x===current?'selected':''}" type="button" role="option" aria-selected="${x===current?'true':'false'}" data-value="${x}" onclick="choosePhotoPart(event,'${id}','${x}',${d},${slot},${isEmpty?'true':'false'})">${x}</button>`).join('')}</div></div>`;
 }
 function openPhotoPicker(inputId){
   closePhotoPartMenus();
@@ -1814,40 +1824,8 @@ function resetAll(){if(confirm('모든 기록을 초기화할까요?')){localSto
 function renderAll(){renderHome();renderDayGrid();renderTable();renderReport();renderPhotos()}state.selected=isUnlocked(state.selected)?state.selected:today();renderAll();loadForm();
 
 
-/* Use touchend as the single mobile activation event so Android/iOS pressed overlays do not appear. */
-(function installPhotoTouchFix(){
-  let lastTouchTime=0;
-  const selector='.photoPartBtn,.photoPartOption,.photoRegisterBtn,.photoChangeBtn,.photoDeleteBtn';
-
-  document.addEventListener('touchstart',function(e){
-    const el=e.target.closest(selector);
-    if(!el) return;
-    e.preventDefault();
-    el.blur?.();
-  },{capture:true,passive:false});
-
-  document.addEventListener('touchend',function(e){
-    const el=e.target.closest(selector);
-    if(!el) return;
-    e.preventDefault();
-    e.stopPropagation();
-    lastTouchTime=Date.now();
-    el.blur?.();
-    el.click();
-    requestAnimationFrame(()=>el.blur?.());
-  },{capture:true,passive:false});
-
-  document.addEventListener('click',function(e){
-    const el=e.target.closest(selector);
-    if(!el) return;
-    if(Date.now()-lastTouchTime<650 && e.isTrusted){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-    requestAnimationFrame(()=>el.blur?.());
-  },true);
-})();
-
+/* Photo controls use normal click activation.
+   Preventing touchstart previously blocked the custom part selector on mobile. */
 </script>
 </body>
 </html>
