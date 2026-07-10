@@ -1311,6 +1311,100 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   .dayDetailBox .detailGrid{grid-template-columns:80px max-content!important;column-gap:16px!important;}
 }
 
+
+
+/* 2026-07-11 final mobile fixes: dropdown, popup alignment/shadow, balanced photo carousel */
+/* Detail popup: preserve full outer shadow while keeping the box above the fixed navigation. */
+.dayDetailModal{
+  inset:0!important;
+  height:100dvh!important;
+  padding:12px 14px calc(var(--bottom-nav-safe) + 16px)!important;
+  overflow:visible!important;
+}
+.dayDetailBox{
+  max-height:calc(100dvh - var(--bottom-nav-safe) - 40px)!important;
+  box-shadow:0 18px 42px rgba(15,23,42,.24)!important;
+  overflow-y:auto!important;
+}
+/* Labels and values form one compact, consistent two-column block. */
+.dayDetailBox .detailGrid{
+  grid-template-columns:78px 68px!important;
+  justify-content:start!important;
+  column-gap:10px!important;
+  row-gap:8px!important;
+}
+.dayDetailBox .detailGrid>b{width:78px!important;text-align:left!important;}
+.dayDetailBox .detailGrid>span{
+  width:68px!important;
+  text-align:center!important;
+  justify-self:center!important;
+}
+@media(max-width:380px){
+  .dayDetailBox .detailGrid{grid-template-columns:72px 64px!important;column-gap:8px!important;}
+  .dayDetailBox .detailGrid>b{width:72px!important;}
+  .dayDetailBox .detailGrid>span{width:64px!important;}
+}
+
+/* Custom part menu stays downward, but is slightly shorter without looking cramped. */
+.photoPartMenu,
+.photoPartControl.openUp .photoPartMenu{
+  top:37px!important;
+  bottom:auto!important;
+  width:80px!important;
+  padding:4px!important;
+  gap:1px!important;
+}
+.photoPartOption{
+  min-height:26px!important;
+  padding:4px 5px!important;
+  line-height:1.2!important;
+  font-size:11.5px!important;
+}
+/* Extra photo rows get real page space, so their controls and card edge can scroll clear of the nav. */
+#record .card.hasExtraPhotoSlots{
+  margin-bottom:calc(var(--bottom-nav-safe) + 14px)!important;
+}
+#record .card.photoMenuSpace{
+  margin-bottom:calc(var(--bottom-nav-safe) + var(--open-photo-menu-height, 150px) + 18px)!important;
+}
+
+/* Full photo record: keep current card width, reveal only a thin and equal hint on both sides. */
+.photoRecordScroll.singleRecord,
+.photoRecordScroll.multiRecord{
+  justify-content:flex-start!important;
+  gap:10px!important;
+  padding:4px 0 8px!important;
+  scroll-padding-inline:24px!important;
+  overflow-x:auto!important;
+}
+.photoRecordScroll::before,
+.photoRecordScroll::after{
+  content:"";
+  display:block;
+  flex:0 0 24px;
+}
+.photoRecordScroll .photoRecordCard,
+.photoRecordScroll.singleRecord .photoRecordCard,
+.photoRecordScroll.multiRecord .photoRecordCard{
+  flex:0 0 calc(100% - 48px)!important;
+  width:calc(100% - 48px)!important;
+  max-width:none!important;
+  scroll-snap-align:center!important;
+}
+.photoRecordScroll.singleRecord{overflow-x:hidden!important;}
+@media(max-width:380px){
+  .photoRecordScroll.singleRecord,
+  .photoRecordScroll.multiRecord{scroll-padding-inline:22px!important;}
+  .photoRecordScroll::before,
+  .photoRecordScroll::after{flex-basis:22px;}
+  .photoRecordScroll .photoRecordCard,
+  .photoRecordScroll.singleRecord .photoRecordCard,
+  .photoRecordScroll.multiRecord .photoRecordCard{
+    flex-basis:calc(100% - 44px)!important;
+    width:calc(100% - 44px)!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1737,7 +1831,18 @@ function ensurePhotoSlotVisible(slotOrElement, extra=14){
 }
 
 function closePhotoPartMenus(except){
-  document.querySelectorAll('.photoPartControl.open').forEach(el=>{if(el!==except){el.classList.remove('open');el.classList.remove('openUp');}});
+  document.querySelectorAll('.photoPartControl.open').forEach(el=>{
+    if(el!==except){
+      el.classList.remove('open');
+      el.classList.remove('openUp');
+      el.querySelector('.photoPartBtn')?.setAttribute('aria-expanded','false');
+    }
+  });
+  if(!except){
+    const card=document.getElementById('photoGrid')?.closest('.card');
+    card?.classList.remove('photoMenuSpace');
+    card?.style.removeProperty('--open-photo-menu-height');
+  }
 }
 function togglePhotoPartMenu(event,id){
   event.stopPropagation();
@@ -1748,13 +1853,32 @@ function togglePhotoPartMenu(event,id){
   control.classList.toggle('open',willOpen);
   control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded',String(willOpen));
 
-  if(willOpen){
-    /* All menus open downward. Scroll only when the complete menu would meet the bottom nav. */
-    requestAnimationFrame(()=>{
-      const menu=control.querySelector('.photoPartMenu');
-      ensureAboveBottomNav(menu||control,12,'smooth');
-    });
+  const card=document.getElementById('photoGrid')?.closest('.card');
+  if(!willOpen){
+    card?.classList.remove('photoMenuSpace');
+    card?.style.removeProperty('--open-photo-menu-height');
+    return;
   }
+
+  /* Always open downward. Create enough real document space first, then move only
+     the exact amount needed to keep the complete menu above the fixed navigation. */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const menu=control.querySelector('.photoPartMenu');
+    if(!menu) return;
+    const menuHeight=Math.ceil(menu.getBoundingClientRect().height||145);
+    if(card){
+      card.style.setProperty('--open-photo-menu-height',`${menuHeight}px`);
+      card.classList.add('photoMenuSpace');
+    }
+    requestAnimationFrame(()=>{
+      const nav=document.querySelector('.tabs');
+      const navTop=nav?nav.getBoundingClientRect().top:window.innerHeight;
+      const rect=menu.getBoundingClientRect();
+      const safeGap=14;
+      const overflow=rect.bottom-(navTop-safeGap);
+      if(overflow>0) window.scrollBy({top:Math.ceil(overflow),left:0,behavior:'smooth'});
+    });
+  }));
 }
 function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   event.stopPropagation();
@@ -1765,6 +1889,9 @@ function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   control.classList.remove('open');
   control.classList.remove('openUp');
   control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded','false');
+  const photoCard=document.getElementById('photoGrid')?.closest('.card');
+  photoCard?.classList.remove('photoMenuSpace');
+  photoCard?.style.removeProperty('--open-photo-menu-height');
   ensurePhotoSlotVisible(slot,14);
   if(!isEmpty) updatePhotoPart(d,slot,value);
 }
@@ -1800,6 +1927,8 @@ async function renderPhotos(){
   }
   if(n<5) html+=`<button class="photoSlot addSlot" type="button" onclick="addPhotoSlot()"><strong class="addPhotoPlus">＋</strong><span class="addPhotoText">사진 추가</span></button>`;
   photoGrid.innerHTML=html;
+  const photoCard=photoGrid.closest('.card');
+  if(photoCard) photoCard.classList.toggle('hasExtraPhotoSlots', n>3 || slots.length>3);
   for(let i=0;i<n;i++){
     const p=slots[i]; if(!p) continue;
     const src=await getPhoto(p.id);
