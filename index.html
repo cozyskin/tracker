@@ -1073,6 +1073,43 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   .photoPartMenu{width:78px;}
 }
 
+
+
+/* Final mobile photo-control fix: menus remain selectable and tap flash is suppressed */
+.photoGrid,.photoSlot{overflow:visible !important;}
+.photoSlot{position:relative !important;}
+.photoSlot img{overflow:hidden;border-radius:12px;}
+.photoPartControl{z-index:120;}
+.photoPartControl.open{z-index:500;}
+.photoPartMenu{z-index:1000 !important;pointer-events:auto !important;}
+.photoPartOption{pointer-events:auto !important;}
+
+.photoPartBtn,.photoPartOption,.photoRegisterBtn,.photoChangeBtn,.photoDeleteBtn{
+  -webkit-tap-highlight-color:rgba(0,0,0,0) !important;
+  tap-highlight-color:rgba(0,0,0,0) !important;
+  -webkit-touch-callout:none !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:none !important;
+}
+.photoPartBtn::selection,.photoPartOption::selection,
+.photoRegisterBtn::selection,.photoChangeBtn::selection,.photoDeleteBtn::selection{background:transparent !important;}
+.photoPartBtn:active,.photoPartBtn:focus,.photoPartBtn:focus-visible,
+.photoPartOption:active,.photoPartOption:focus,.photoPartOption:focus-visible,
+.photoRegisterBtn:active,.photoRegisterBtn:focus,.photoRegisterBtn:focus-visible,
+.photoChangeBtn:active,.photoChangeBtn:focus,.photoChangeBtn:focus-visible,
+.photoDeleteBtn:active,.photoDeleteBtn:focus,.photoDeleteBtn:focus-visible{
+  outline:0 !important;box-shadow:none !important;filter:none !important;transform:none !important;
+}
+.photoPartBtn:active{background:#fff !important;color:var(--ink) !important;}
+.photoPartOption:active{background:#fff !important;color:var(--ink) !important;}
+.photoPartOption.selected,.photoPartOption.selected:active{background:#f3f0ff !important;color:var(--accent) !important;}
+.photoRegisterBtn:active,.photoChangeBtn:active{background:#f3f0ff !important;color:var(--accent) !important;}
+.photoDeleteBtn:active{background:#fff !important;color:var(--muted) !important;}
+
 </style>
 </head>
 <body>
@@ -1724,6 +1761,42 @@ async function openLightbox(id,meta){ const src=await getPhoto(id); if(!src) ret
 function closeLightbox(){ lightbox.classList.remove('active'); lightboxImg.src=''; }
 function resetAll(){if(confirm('모든 기록을 초기화할까요?')){localStorage.removeItem(KEY);state={selected:1,days:{}};renderAll();showView('home')}}
 function renderAll(){renderHome();renderDayGrid();renderTable();renderReport();renderPhotos()}state.selected=isUnlocked(state.selected)?state.selected:today();renderAll();loadForm();
+
+
+/* Use touchend as the single mobile activation event so Android/iOS pressed overlays do not appear. */
+(function installPhotoTouchFix(){
+  let lastTouchTime=0;
+  const selector='.photoPartBtn,.photoPartOption,.photoRegisterBtn,.photoChangeBtn,.photoDeleteBtn';
+
+  document.addEventListener('touchstart',function(e){
+    const el=e.target.closest(selector);
+    if(!el) return;
+    e.preventDefault();
+    el.blur?.();
+  },{capture:true,passive:false});
+
+  document.addEventListener('touchend',function(e){
+    const el=e.target.closest(selector);
+    if(!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    lastTouchTime=Date.now();
+    el.blur?.();
+    el.click();
+    requestAnimationFrame(()=>el.blur?.());
+  },{capture:true,passive:false});
+
+  document.addEventListener('click',function(e){
+    const el=e.target.closest(selector);
+    if(!el) return;
+    if(Date.now()-lastTouchTime<650 && e.isTrusted){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+    requestAnimationFrame(()=>el.blur?.());
+  },true);
+})();
+
 </script>
 </body>
 </html>
