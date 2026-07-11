@@ -1925,7 +1925,7 @@ async function openDayDetail(day){
   const photoWrap=document.getElementById('dayDetailPhotos');
   if(!photos.length){photoWrap.innerHTML='<p class="small">저장된 사진 없음</p>';return;}
   let html='<div class="detailPhotos">';
-  for(const p of photos){const src=await getPhoto(p.id); if(src) html+=`<img src="${src}" alt="Day ${day} ${escHtml(p.part||'')}" onclick="openLightbox('${p.id}','Day ${day} ${escHtml(p.part||'')}')">`;}
+  for(const p of photos){const src=await getPhoto(p.id); if(src) html+=`<img src="${src}" alt="Day ${day} ${escHtml(p.part||'')}" onclick="openLightboxGallery('${p.id}','Day ${day} ${escHtml(p.part||'')}')">`;}
   html+='</div>';
   photoWrap.innerHTML=html;
 }
@@ -2673,7 +2673,7 @@ async function renderPhotoTimeline(){
     let imgs='';
     for(const p of photos){
       const src=await safeGetPhoto(p.id);
-      if(src) imgs+=`<img src="${src}" title="${p.part||''}" onclick="openLightbox('${p.id}','Day ${d} ${p.part||''}')">`;
+      if(src) imgs+=`<img src="${src}" title="${p.part||''}" onclick="openLightboxGallery('${p.id}','Day ${d} ${p.part||''}')">`;
     }
     const parts=photos.map(p=>p.part).filter(Boolean).join(', ');
     html+=`<div class="photoRecordCard"><div class="photoRecordTop"><strong>Day ${d}</strong><span>${photos.length}장</span></div><div class="photoRecordImgs">${imgs}</div>${parts?`<div class="photoRecordParts">${parts}</div>`:''}</div>`;
@@ -3173,5 +3173,206 @@ showPhotoPanel=async function(panel){
 })();
 
 </script>
+
+
+/* 2026-07-11 corrected scope: gallery only in detail popups and Full Record */
+<style>
+/* Large, photo-inside navigation with a generous invisible touch target. */
+.lightboxNav.finalGalleryNav{
+  width:48px!important;height:48px!important;
+  background:rgba(17,24,39,.32)!important;
+  font-size:36px!important;
+}
+.lightboxNav.finalGalleryNav::before{content:"";position:absolute;inset:-8px;border-radius:999px;}
+.lightboxContent.finalSwipeArea{touch-action:pan-y!important;user-select:none!important;-webkit-user-select:none!important;}
+.lightboxContent.finalSwipeArea img{pointer-events:none!important;-webkit-user-drag:none!important;}
+
+/* Right-side indicator for My Records: shown only when content actually overflows. */
+.memoScrollHostFinal{position:relative!important;}
+.memoScrollRailFinal{
+  position:absolute;right:5px;top:44px;bottom:35px;width:3px;
+  border-radius:999px;background:rgba(124,58,237,.06);
+  opacity:0;visibility:hidden;pointer-events:none;z-index:5;
+  transition:opacity .18s ease,visibility 0s linear .18s;
+}
+.memoScrollRailFinal.show{opacity:1;visibility:visible;transition-delay:0s;}
+.memoScrollThumbFinal{
+  position:absolute;left:0;top:0;width:3px;min-height:18px;border-radius:999px;
+  background:rgba(124,58,237,.32);transform:translateY(0);
+}
+#report .memoScroll{padding-right:11px!important;scrollbar-width:none!important;}
+#report .memoScroll::-webkit-scrollbar{display:none!important;}
+</style>
+<script>
+(function(){
+  let galleryItems=[];
+  let galleryIndex=0;
+  let galleryEnabled=false;
+  let swipeStartX=0, swipeStartY=0, swiping=false;
+
+  function lbEls(){
+    return {
+      box:document.getElementById('lightbox'),
+      content:document.querySelector('#lightbox .lightboxContent'),
+      img:document.getElementById('lightboxImg'),
+      meta:document.getElementById('lightboxMeta')
+    };
+  }
+
+  function clearOldNavigation(){
+    document.getElementById('lightboxPrev')?.remove();
+    document.getElementById('lightboxNext')?.remove();
+    document.getElementById('lightboxCounter')?.remove();
+  }
+
+  function rebuildContentWithoutOldSwipeHandlers(){
+    const {content}=lbEls();
+    if(!content || content.dataset.finalClean==='1') return;
+    const fresh=content.cloneNode(true);
+    fresh.dataset.finalClean='1';
+    fresh.classList.add('finalSwipeArea');
+    content.replaceWith(fresh);
+  }
+
+  function ensureGalleryControls(){
+    clearOldNavigation();
+    const {box,meta}=lbEls();
+    if(!box||!meta) return;
+    const make=(id,cls,label,text,step)=>{
+      const btn=document.createElement('button');
+      btn.id=id;btn.type='button';btn.className=`lightboxNav finalGalleryNav ${cls}`;
+      btn.setAttribute('aria-label',label);btn.textContent=text;
+      btn.addEventListener('pointerdown',e=>e.stopPropagation());
+      btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showGalleryIndex(galleryIndex+step);});
+      box.appendChild(btn);return btn;
+    };
+    make('lightboxPrev','prev','이전 사진','‹',-1);
+    make('lightboxNext','next','다음 사진','›',1);
+    const counter=document.createElement('div');
+    counter.id='lightboxCounter';counter.className='lightboxCounter';
+    meta.insertAdjacentElement('afterend',counter);
+  }
+
+  function positionGalleryArrows(){
+    if(!galleryEnabled) return;
+    const {box,img}=lbEls(); if(!box||!img) return;
+    const r=img.getBoundingClientRect(); if(!r.width||!r.height) return;
+    const inset=18;
+    box.style.setProperty('--lightbox-nav-top',(r.top+r.height/2)+'px');
+    box.style.setProperty('--lightbox-prev-left',Math.max(10,r.left+inset)+'px');
+    box.style.setProperty('--lightbox-next-right',Math.max(10,window.innerWidth-r.right+inset)+'px');
+  }
+
+  async function showGalleryIndex(index){
+    if(!galleryEnabled || index<0 || index>=galleryItems.length) return;
+    galleryIndex=index;
+    const item=galleryItems[index];
+    const src=await safeGetPhoto(item.id); if(!src) return;
+    const {img,meta}=lbEls(); if(!img||!meta) return;
+    img.src=src;meta.textContent=item.meta||'';
+    const prev=document.getElementById('lightboxPrev');
+    const next=document.getElementById('lightboxNext');
+    const counter=document.getElementById('lightboxCounter');
+    prev?.classList.toggle('show',index>0);
+    next?.classList.toggle('show',index<galleryItems.length-1);
+    if(counter) counter.textContent=galleryItems.length>1?`${index+1} / ${galleryItems.length}`:'';
+    requestAnimationFrame(positionGalleryArrows);
+  }
+
+  function bindCleanLightboxEvents(){
+    rebuildContentWithoutOldSwipeHandlers();
+    const {box,content,img}=lbEls(); if(!box||!content||!img) return;
+    box.onclick=e=>{if(e.target===box) closeLightbox();};
+    content.onclick=e=>e.stopPropagation();
+    img.draggable=false;
+
+    content.addEventListener('pointerdown',e=>{
+      if(!galleryEnabled || e.pointerType==='mouse' || e.isPrimary===false) return;
+      swipeStartX=e.clientX;swipeStartY=e.clientY;swiping=true;
+      try{content.setPointerCapture(e.pointerId);}catch(_){ }
+    });
+    content.addEventListener('pointerup',e=>{
+      if(!galleryEnabled||!swiping) return;
+      swiping=false;
+      const dx=e.clientX-swipeStartX,dy=e.clientY-swipeStartY;
+      if(Math.abs(dx)<38 || Math.abs(dx)<=Math.abs(dy)*1.1) return;
+      showGalleryIndex(galleryIndex+(dx<0?1:-1));
+    });
+    content.addEventListener('pointercancel',()=>{swiping=false;});
+  }
+
+  const singleOpen=async function(id,meta){
+    galleryEnabled=false;galleryItems=[];galleryIndex=0;
+    clearOldNavigation();
+    bindCleanLightboxEvents();
+    const src=await safeGetPhoto(id);if(!src)return;
+    const {box,img,meta:metaEl}=lbEls();
+    img.src=src;metaEl.textContent=meta||'';box.classList.add('active');
+  };
+
+  window.openLightbox=singleOpen;
+  openLightbox=singleOpen;
+
+  window.openLightboxGallery=async function(id,meta){
+    bindCleanLightboxEvents();
+    const match=String(meta||'').match(/Day\s*(\d+)/i);
+    if(match){
+      const day=Number(match[1]);
+      galleryItems=getDayPhotos(day).map(p=>({id:p.id,meta:`Day ${day} ${p.part||''}`.trim()}));
+    }else galleryItems=[{id,meta:meta||''}];
+    if(!galleryItems.length) galleryItems=[{id,meta:meta||''}];
+    galleryIndex=Math.max(0,galleryItems.findIndex(x=>x.id===id));
+    galleryEnabled=galleryItems.length>1;
+    ensureGalleryControls();
+    await showGalleryIndex(galleryIndex);
+    const {box,img}=lbEls();
+    if(!galleryEnabled) clearOldNavigation();
+    box.classList.add('active');
+    img.addEventListener('load',positionGalleryArrows,{once:true});
+    requestAnimationFrame(positionGalleryArrows);
+  };
+
+  const baseClose=closeLightbox;
+  closeLightbox=function(){
+    const {box,img}=lbEls();
+    box?.classList.remove('active');if(img)img.src='';
+    galleryEnabled=false;galleryItems=[];galleryIndex=0;clearOldNavigation();
+  };
+  window.closeLightbox=closeLightbox;
+  window.addEventListener('resize',()=>requestAnimationFrame(positionGalleryArrows),{passive:true});
+
+  let fadeTimer=0;
+  function installFinalMemoIndicator(){
+    const scroller=document.querySelector('#report .memoScroll');
+    if(!scroller) return;
+    const host=scroller.closest('.guideBox');if(!host)return;
+    host.classList.add('memoScrollHostFinal');
+    host.querySelectorAll('.memoScrollHint,.memoScrollRail,.memoScrollRailFinal').forEach(x=>x.remove());
+    const rail=document.createElement('div');rail.className='memoScrollRailFinal';rail.setAttribute('aria-hidden','true');
+    const thumb=document.createElement('span');thumb.className='memoScrollThumbFinal';rail.appendChild(thumb);host.appendChild(rail);
+    const update=(stay=false)=>{
+      const max=scroller.scrollHeight-scroller.clientHeight;
+      if(max<=2){rail.classList.remove('show');return;}
+      const railH=rail.clientHeight||80;
+      const thumbH=Math.max(18,Math.round(railH*scroller.clientHeight/scroller.scrollHeight));
+      const travel=Math.max(0,railH-thumbH);
+      thumb.style.height=thumbH+'px';
+      thumb.style.transform=`translateY(${Math.round((scroller.scrollTop/max)*travel)}px)`;
+      rail.classList.add('show');clearTimeout(fadeTimer);
+      if(!stay)fadeTimer=setTimeout(()=>rail.classList.remove('show'),1000);
+    };
+    scroller.addEventListener('scroll',()=>update(false),{passive:true});
+    scroller.addEventListener('pointerdown',()=>update(true),{passive:true});
+    scroller.addEventListener('pointerup',()=>update(false),{passive:true});
+    requestAnimationFrame(()=>update(false));
+  }
+
+  const baseRenderReportFinal=renderReport;
+  renderReport=function(){baseRenderReportFinal();requestAnimationFrame(installFinalMemoIndicator);};
+  window.renderReport=renderReport;
+  requestAnimationFrame(installFinalMemoIndicator);
+})();
+</script>
+
 </body>
 </html>
