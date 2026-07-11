@@ -5259,21 +5259,59 @@ showPhotoPanel=async function(panel){
 }
 </style>
 <script>
-(function alignMyRecordsIndicator(){
-  function align(){
+(function interactiveMyRecordsIndicator(){
+  let hideTimer=0;
+
+  function setup(){
     const scroller=document.querySelector('#report .memoScroll');
     const rail=document.querySelector('#report .memoScrollRailFinal');
     const host=scroller?.closest('.guideBox');
-    if(!scroller||!rail||!host) return;
+    const thumb=rail?.querySelector('.memoScrollThumbFinal');
+    if(!scroller||!rail||!host||!thumb) return;
+
     rail.style.top=scroller.offsetTop+'px';
     rail.style.height=scroller.clientHeight+'px';
-    const overflow=scroller.scrollHeight>scroller.clientHeight+2;
-    rail.classList.toggle('show',overflow);
+
+    const updateThumb=()=>{
+      const max=scroller.scrollHeight-scroller.clientHeight;
+      if(max<=2){
+        rail.classList.remove('show');
+        return false;
+      }
+      const railHeight=Math.max(1,rail.clientHeight);
+      const thumbHeight=Math.max(18,Math.round(railHeight*(scroller.clientHeight/scroller.scrollHeight)));
+      const travel=Math.max(0,railHeight-thumbHeight);
+      const y=max?Math.round((scroller.scrollTop/max)*travel):0;
+      thumb.style.height=thumbHeight+'px';
+      thumb.style.transform=`translateY(${y}px)`;
+      return true;
+    };
+
+    const reveal=()=>{
+      if(!updateThumb()) return;
+      clearTimeout(hideTimer);
+      rail.classList.add('show');
+      hideTimer=setTimeout(()=>rail.classList.remove('show'),1350);
+    };
+
+    /* It starts hidden. A tap/press or actual scroll briefly reveals it. */
+    rail.classList.remove('show');
+    updateThumb();
+
+    if(scroller.dataset.touchIndicatorBound!=='1'){
+      scroller.addEventListener('pointerdown',reveal,{passive:true});
+      scroller.addEventListener('touchstart',reveal,{passive:true});
+      scroller.addEventListener('scroll',reveal,{passive:true});
+      scroller.dataset.touchIndicatorBound='1';
+    }
   }
-  requestAnimationFrame(align);
-  window.addEventListener('resize',()=>requestAnimationFrame(align),{passive:true});
+
+  requestAnimationFrame(setup);
+  window.addEventListener('resize',()=>requestAnimationFrame(setup),{passive:true});
   const report=document.getElementById('report');
-  if(report) new MutationObserver(()=>requestAnimationFrame(align)).observe(report,{childList:true,subtree:true});
+  if(report){
+    new MutationObserver(()=>requestAnimationFrame(setup)).observe(report,{childList:true,subtree:true});
+  }
 })();
 </script>
 </body>
