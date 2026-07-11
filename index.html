@@ -1579,6 +1579,20 @@ html{
   margin-bottom:var(--timeline-auto-footer-space, 0px) !important;
 }
 
+
+
+/* 2026-07-11 full-record transition final isolation
+   A real spacer is used only while the Full Record panel is active. */
+#timelineFooterSpacer{
+  display:block;
+  width:100%;
+  height:0;
+  margin:0;
+  padding:0;
+  border:0;
+  pointer-events:none;
+}
+
 </style>
 </head>
 <body>
@@ -2629,6 +2643,97 @@ function scheduleTimelineFooterVisibility(){
   /* One frame allows the newly rendered card and images to establish their final geometry. */
   requestAnimationFrame(run);
 }
+
+
+/* 2026-07-11 final Full Record reveal
+   Build the missing scroll range first, then make one short eased movement.
+   The target is the OUTER photo report card, so its visible bottom edge keeps
+   a consistent gap above the fixed navigation on every viewport. */
+let timelineRevealFrame=0;
+function getTimelineFooterSpacer(){
+  const report=document.getElementById('report');
+  if(!report) return null;
+  let spacer=document.getElementById('timelineFooterSpacer');
+  if(!spacer){
+    spacer=document.createElement('div');
+    spacer.id='timelineFooterSpacer';
+    spacer.setAttribute('aria-hidden','true');
+    report.appendChild(spacer);
+  }
+  return spacer;
+}
+function clearTimelineFooterSpacer(){
+  cancelAnimationFrame(timelineRevealFrame);
+  timelineRevealFrame=0;
+  const spacer=document.getElementById('timelineFooterSpacer');
+  if(spacer) spacer.style.height='0px';
+  document.getElementById('report')?.style.removeProperty('--timeline-auto-footer-space');
+}
+function animateTimelineReveal(endY,duration=125){
+  cancelAnimationFrame(timelineRevealFrame);
+  const startY=window.scrollY||document.documentElement.scrollTop||0;
+  const distance=endY-startY;
+  if(Math.abs(distance)<1){ window.scrollTo(0,endY); return; }
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+    window.scrollTo(0,endY);
+    return;
+  }
+  const start=performance.now();
+  const ease=t=>1-Math.pow(1-t,3);
+  const step=now=>{
+    const p=Math.min(1,(now-start)/duration);
+    window.scrollTo(0,startY+distance*ease(p));
+    if(p<1) timelineRevealFrame=requestAnimationFrame(step);
+    else timelineRevealFrame=0;
+  };
+  timelineRevealFrame=requestAnimationFrame(step);
+}
+function scheduleTimelineFooterVisibility(){
+  const run=()=>{
+    if(currentPhotoPanel!=='timeline') return;
+    const report=document.getElementById('report');
+    const panel=document.getElementById('photoTimelinePanel');
+    const nav=document.querySelector('.tabs');
+    if(!report?.classList.contains('active')||!panel||!nav) return;
+
+    /* Use the outer card edge, not the inner guide box edge. */
+    const outerCard=panel.closest('.card');
+    if(!outerCard) return;
+    const spacer=getTimelineFooterSpacer();
+    if(!spacer) return;
+
+    const gap=18;
+    spacer.style.height='0px';
+    report.style.removeProperty('--timeline-auto-footer-space');
+    void spacer.offsetHeight;
+
+    const currentY=window.scrollY||document.documentElement.scrollTop||0;
+    const delta=Math.max(0,Math.ceil(outerCard.getBoundingClientRect().bottom-(nav.getBoundingClientRect().top-gap)));
+    const desiredY=currentY+delta;
+
+    const viewport=window.visualViewport?.height||window.innerHeight||document.documentElement.clientHeight;
+    const docHeight=Math.max(document.documentElement.scrollHeight,document.body?.scrollHeight||0);
+    const maxBefore=Math.max(0,docHeight-viewport);
+    const missing=Math.max(0,Math.ceil(desiredY-maxBefore));
+
+    /* This is actual document space, active only in the Full Record panel. */
+    spacer.style.height=`${missing}px`;
+    void spacer.offsetHeight;
+
+    const finalMax=Math.max(0,Math.max(document.documentElement.scrollHeight,document.body?.scrollHeight||0)-viewport);
+    const finalY=Math.max(0,Math.min(finalMax,desiredY));
+    animateTimelineReveal(finalY,125);
+  };
+  requestAnimationFrame(run);
+}
+
+/* Keep the temporary spacer strictly scoped to the Full Record panel. */
+const originalShowPhotoPanelFinal=showPhotoPanel;
+showPhotoPanel=async function(panel){
+  if(panel!=='timeline') clearTimelineFooterSpacer();
+  return originalShowPhotoPanelFinal(panel);
+};
+
 </script>
 </body>
 </html>
