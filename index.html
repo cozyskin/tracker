@@ -1540,6 +1540,33 @@ button:active,.btn:active,.tab:active,.daybtn:active,.choice:active,.chip:active
   }
 }
 
+
+/* 2026-07-11 device/browser responsive visibility safeguards (isolated) */
+/* Preserve the existing layouts; only provide a small natural footer clearance. */
+#record.view.active > .card:last-child{
+  margin-bottom:18px !important;
+  scroll-margin-bottom:calc(var(--bottom-nav-safe) + 18px) !important;
+}
+#photoTimelinePanel .guideBox{
+  scroll-margin-bottom:calc(var(--bottom-nav-safe) + 18px) !important;
+}
+#photoTimelinePanel .photoRecordHint{
+  margin-bottom:2px !important;
+}
+/* Let browser-native scrolling leave room for the fixed navigation. */
+html{
+  scroll-padding-bottom:calc(var(--bottom-nav-safe) + 18px);
+}
+
+
+
+/* 2026-07-11 isolated dropdown visibility recovery
+   Reserve space on the record section only while a photo-part menu is open.
+   This avoids changing normal photo-card spacing and prevents the fixed bottom nav
+   from clipping the final menu option in short previews or small mobile viewports. */
+#record.photoDropdownOpen{
+  padding-bottom:var(--photo-dropdown-reserve, 0px) !important;
+}
 </style>
 </head>
 <body>
@@ -1945,7 +1972,10 @@ function addPhotoSlot(){
   arr.push(null);
   state.days[d]={...dayData(d),photos:arr};
   localStorage.setItem(KEY,JSON.stringify(state));
-  renderPhotos().then(()=>ensurePhotoSlotVisible(arr.length-1,16));
+  renderPhotos().then(()=>{
+    ensurePhotoSlotVisible(arr.length-1,16);
+    scheduleRecordPhotoFooterVisibility(arr.length-1);
+  });
 }
 let photoRenderSeq=0;
 
@@ -1965,6 +1995,45 @@ function ensurePhotoSlotVisible(slotOrElement, extra=14){
   requestAnimationFrame(()=>ensureAboveBottomNav(el,extra,'smooth'));
 }
 
+/* Measure the actual fixed navigation on the current device/browser instead of
+   relying on a phone-specific pixel value. */
+function ensureFooterAboveBottomNav(target, gap=16, behavior='smooth'){
+  const el=typeof target==='string'?document.querySelector(target):target;
+  const nav=document.querySelector('.tabs');
+  if(!el||!nav) return;
+  const navTop=nav.getBoundingClientRect().top;
+  const bottom=el.getBoundingClientRect().bottom;
+  const delta=Math.ceil(bottom-(navTop-gap));
+  if(delta>0) window.scrollBy({top:delta,left:0,behavior});
+}
+function scheduleRecordPhotoFooterVisibility(preferredSlot){
+  const run=()=>{
+    if(!document.getElementById('record')?.classList.contains('active')) return;
+    const card=document.getElementById('photoGrid')?.closest('.card');
+    if(!card) return;
+    /* The card edge is the stable target: this keeps the last buttons visible
+       and leaves one small, natural gap above the navigation. */
+    ensureFooterAboveBottomNav(card,16,'smooth');
+    if(Number.isInteger(preferredSlot)){
+      const slot=document.getElementById('photoSlot'+preferredSlot);
+      if(slot) ensureFooterAboveBottomNav(slot,16,'smooth');
+    }
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(run));
+  setTimeout(run,90);
+}
+function scheduleTimelineFooterVisibility(){
+  const run=()=>{
+    if(currentPhotoPanel!=='timeline') return;
+    if(!document.getElementById('report')?.classList.contains('active')) return;
+    const panel=document.getElementById('photoTimelinePanel');
+    const card=panel?.querySelector('.guideBox') || panel;
+    if(card) ensureFooterAboveBottomNav(card,16,'smooth');
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(run));
+  setTimeout(run,100);
+}
+
 function closePhotoPartMenus(except){
   document.querySelectorAll('.photoPartControl.open').forEach(el=>{
     if(el!==except){
@@ -1977,6 +2046,9 @@ function closePhotoPartMenus(except){
     const card=document.getElementById('photoGrid')?.closest('.card');
     card?.classList.remove('photoMenuSpace');
     card?.style.removeProperty('--open-photo-menu-height');
+    const record=document.getElementById('record');
+    record?.classList.remove('photoDropdownOpen');
+    record?.style.removeProperty('--photo-dropdown-reserve');
   }
 }
 function togglePhotoPartMenu(event,id){
@@ -1989,32 +2061,50 @@ function togglePhotoPartMenu(event,id){
   control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded',String(willOpen));
 
   const card=document.getElementById('photoGrid')?.closest('.card');
+  const record=document.getElementById('record');
   if(!willOpen){
     card?.classList.remove('photoMenuSpace');
     card?.style.removeProperty('--open-photo-menu-height');
+    record?.classList.remove('photoDropdownOpen');
+    record?.style.removeProperty('--photo-dropdown-reserve');
     return;
   }
 
-  /* Always open downward. Create enough real document space first, then move only
-     the exact amount needed to keep the complete menu above the fixed navigation. */
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  /* The menu still opens downward. Space is reserved on the record section itself,
+     not as permanent card margin, so even embedded previews with a short viewport
+     can scroll far enough to show every option above the fixed navigation. */
+  const keepMenuVisible=()=>{
+    if(!control.classList.contains('open')) return;
     const menu=control.querySelector('.photoPartMenu');
-    if(!menu) return;
+    const nav=document.querySelector('.tabs');
+    if(!menu||!nav) return;
+
     const menuHeight=Math.ceil(menu.getBoundingClientRect().height||145);
+    const navHeight=Math.ceil(nav.getBoundingClientRect().height||78);
+    const safeGap=16;
+
     if(card){
       card.style.setProperty('--open-photo-menu-height',`${menuHeight}px`);
       card.classList.add('photoMenuSpace');
     }
+    if(record){
+      record.style.setProperty('--photo-dropdown-reserve',`${menuHeight+navHeight+safeGap}px`);
+      record.classList.add('photoDropdownOpen');
+    }
+
     requestAnimationFrame(()=>{
-      const nav=document.querySelector('.tabs');
-      const navTop=nav?nav.getBoundingClientRect().top:window.innerHeight;
-      const rect=menu.getBoundingClientRect();
-      const safeGap=14;
-      const overflow=rect.bottom-(navTop-safeGap);
-      if(overflow>0) window.scrollBy({top:Math.ceil(overflow),left:0,behavior:'smooth'});
+      if(!control.classList.contains('open')) return;
+      const menuRect=menu.getBoundingClientRect();
+      const navTop=nav.getBoundingClientRect().top;
+      const overflow=Math.ceil(menuRect.bottom-(navTop-safeGap));
+      if(overflow>0) window.scrollBy({top:overflow,left:0,behavior:'smooth'});
     });
-  }));
+  };
+
+  requestAnimationFrame(()=>requestAnimationFrame(keepMenuVisible));
+  setTimeout(keepMenuVisible,120);
 }
+
 function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   event.stopPropagation();
   const control=document.getElementById(controlId); if(!control) return;
@@ -2027,6 +2117,9 @@ function choosePhotoPart(event,controlId,value,d,slot,isEmpty){
   const photoCard=document.getElementById('photoGrid')?.closest('.card');
   photoCard?.classList.remove('photoMenuSpace');
   photoCard?.style.removeProperty('--open-photo-menu-height');
+  const record=document.getElementById('record');
+  record?.classList.remove('photoDropdownOpen');
+  record?.style.removeProperty('--photo-dropdown-reserve');
   ensurePhotoSlotVisible(slot,14);
   if(!isEmpty) updatePhotoPart(d,slot,value);
 }
@@ -2093,6 +2186,7 @@ async function addPhoto(e,d,slot){
     loadForm();
     await renderPhotos();
     ensurePhotoSlotVisible(slot,16);
+    scheduleRecordPhotoFooterVisibility(slot);
     await renderCompare();
   }catch(err){alert('사진 저장 중 오류가 발생했습니다. 다른 사진으로 다시 시도해보세요.');}
 }
@@ -2137,6 +2231,9 @@ async function deletePhoto(d,slot){
   state.days[d]={...dayData(d),photos:arr};
   localStorage.setItem(KEY,JSON.stringify(state));
   loadForm();
+  const remainingSlots=getDayPhotoSlots(d);
+  const lastVisibleIndex=Math.max(0,visiblePhotoSlots(remainingSlots)-1);
+  scheduleRecordPhotoFooterVisibility(lastVisibleIndex);
   await renderCompare();
   await renderPhotoTimeline();
 }
@@ -2168,14 +2265,17 @@ function bestComparePart(by){
   const anyParts=photoParts.filter(p=>(by[p]||[]).length);
   return anyParts[0]||'';
 }
-function showPhotoPanel(panel){
+async function showPhotoPanel(panel){
   currentPhotoPanel=panel;
   const cp=document.getElementById('photoComparePanel'), tp=document.getElementById('photoTimelinePanel');
   const ct=document.getElementById('compareTab'), tt=document.getElementById('timelineTab');
   if(cp&&tp){cp.style.display=panel==='compare'?'block':'none';tp.style.display=panel==='timeline'?'block':'none';}
   if(ct&&tt){ct.classList.toggle('active',panel==='compare');tt.classList.toggle('active',panel==='timeline');}
-  if(panel==='compare') renderCompare();
-  if(panel==='timeline') renderPhotoTimeline();
+  if(panel==='compare') await renderCompare();
+  if(panel==='timeline'){
+    await renderPhotoTimeline();
+    scheduleTimelineFooterVisibility();
+  }
 }
 async function selectComparePart(part){ currentComparePart=part; await renderCompare(); }
 async function renderCompare(){
