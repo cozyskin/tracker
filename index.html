@@ -5187,5 +5187,30 @@ showPhotoPanel=async function(panel){
   #lightbox.unifiedPhotoViewer .viewerSlideMeta{width:calc(100% - 56px);}
 }
 </style>
+
+<!-- 2026-07-11 single-photo zoom: remove internal slide frame -->
+<style>
+/* A single photo must zoom against the full viewport, not inside the padded slide.
+   The viewport still clips at the real screen edge, so no internal side frame appears. */
+#lightbox.unifiedPhotoViewer.singlePhotoViewer.zoomed .currentSlide,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .currentSlide,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomActive .currentSlide{
+  padding-left:0!important;
+  padding-right:0!important;
+  overflow:visible!important;
+}
+#lightbox.unifiedPhotoViewer.singlePhotoViewer.zoomed .currentSlide .viewerFigure,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .currentSlide .viewerFigure,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomActive .currentSlide .viewerFigure{
+  width:100vw!important;
+  max-width:none!important;
+  overflow:visible!important;
+}
+#lightbox.unifiedPhotoViewer.singlePhotoViewer.zoomed .currentSlide img,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .currentSlide img,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomActive .currentSlide img{
+  border-radius:0!important;
+}
+</style>
 </body>
 </html>
