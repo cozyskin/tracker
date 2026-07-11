@@ -4663,6 +4663,14 @@ showPhotoPanel=async function(panel){
   viewport.addEventListener('touchstart',e=>{
     if(animating||!box.classList.contains('active')) return;
     if(e.touches.length===2){
+      /* 확대는 사진이 한 장인 단일 보기에서만 허용합니다.
+         같은 날의 여러 사진을 넘겨보는 갤러리에서는 핀치 확대를 막아
+         스와이프 동작과 충돌하지 않도록 합니다. */
+      if(items.length>1){
+        mode='';
+        e.preventDefault();
+        return;
+      }
       mode='pinch';sleepNav();pinchStart=distance(e.touches[0],e.touches[1]);pinchCenter=midpoint(e.touches[0],e.touches[1]);startScale=scale;startPanX=panX;startPanY=panY;e.preventDefault();return;
     }
     if(e.touches.length!==1) return;
@@ -4721,7 +4729,11 @@ showPhotoPanel=async function(panel){
     if(e.target===box||e.target===viewport){close();return;}
     if(e.target.closest('.viewerSlide')){
       e.stopPropagation();const now=Date.now();
-      if(now-lastTap<300){scale=scale>1.01?1:2;panX=0;panY=0;applyZoom(true);scale>1.01?sleepNav():wakeNav();lastTap=0;}else{lastTap=now;wakeNav();}
+      if(now-lastTap<300){
+        /* 여러 장 갤러리에서는 더블 탭 확대도 사용하지 않습니다. */
+        if(items.length===1){scale=scale>1.01?1:2;panX=0;panY=0;applyZoom(true);scale>1.01?sleepNav():wakeNav();}
+        lastTap=0;
+      }else{lastTap=now;wakeNav();}
     }
   });
   box.addEventListener('pointerdown',e=>{if(e.target.closest('.viewerNav,.closeLightbox'))e.stopPropagation();});
@@ -4799,16 +4811,19 @@ showPhotoPanel=async function(panel){
       const total=match?Number(match[2]):0;
       counter.classList.toggle('singlePhotoCount',total<=1);
 
-      const rect=currentImg.getBoundingClientRect();
-      if(!rect.width || !rect.height) return;
+      const slide=currentImg.closest('.currentSlide');
+      const slideRect=slide?.getBoundingClientRect();
+      if(!slideRect || !currentImg.offsetWidth || !currentImg.offsetHeight) return;
 
-      /* Keep the Day/part text immediately below the visible photo.
-         Multiple-photo count remains on the centered second line. */
+      /* 확대 transform이 적용된 getBoundingClientRect()를 사용하면
+         사진을 확대할 때 글씨 위치까지 함께 움직이게 됩니다.
+         transform의 영향을 받지 않는 원래 레이아웃 위치를 기준으로 고정합니다. */
+      const basePhotoBottom=slideRect.top+currentImg.offsetTop+currentImg.offsetHeight;
       const gap=10;
       const wrapHeight=wrap.getBoundingClientRect().height || (total>1?39:19);
       const safeBottom=16;
       const maxTop=Math.max(0,window.innerHeight-wrapHeight-safeBottom);
-      const top=Math.min(maxTop,Math.round(rect.bottom+gap));
+      const top=Math.min(maxTop,Math.round(basePhotoBottom+gap));
       box.style.setProperty('--viewer-meta-top',top+'px');
     });
   }
@@ -4818,7 +4833,123 @@ showPhotoPanel=async function(panel){
   new MutationObserver(update).observe(counter,{childList:true,characterData:true,subtree:true});
   new MutationObserver(update).observe(box,{attributes:true,attributeFilter:['class']});
   window.addEventListener('resize',update,{passive:true});
-  window.visualViewport?.addEventListener('resize',update,{passive:true});
   update();
+})();
+</script>
+
+<!-- 2026-07-11 single-photo zoom metadata visibility correction -->
+<style>
+/* 한 장 보기에서 사진이 확대된 동안에는 Day/부위 글씨를 완전히 숨깁니다.
+   글씨는 사진의 transform 영역 밖에 유지되며, 원래 배율로 돌아오면 다시 나타납니다. */
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .viewerMetaWrap{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:opacity .12s ease,visibility 0s linear .12s!important;
+}
+#lightbox.unifiedPhotoViewer:not(.singlePhotoZoomed) .viewerMetaWrap{
+  transition:opacity .12s ease,visibility 0s linear 0s!important;
+}
+</style>
+<script>
+(function hideSinglePhotoMetadataWhileZoomed(){
+  const box=document.getElementById('lightbox');
+  if(!box || box.dataset.singleZoomMetaFixed==='1') return;
+  box.dataset.singleZoomMetaFixed='1';
+
+  const img=box.querySelector('.currentSlide img');
+  const counter=box.querySelector('.viewerCounter');
+  if(!img || !counter) return;
+
+  let frame=0;
+  function update(){
+    cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{
+      const countText=counter.textContent.trim();
+      const match=countText.match(/^(\d+)\s*\/\s*(\d+)$/);
+      const total=match?Number(match[2]):1;
+      const single=total<=1;
+
+      let scale=1;
+      const transform=getComputedStyle(img).transform;
+      if(transform && transform!=='none'){
+        try{
+          const matrix=new DOMMatrixReadOnly(transform);
+          scale=Math.sqrt(matrix.a*matrix.a+matrix.b*matrix.b)||1;
+        }catch(_){
+          const values=transform.match(/matrix\(([^)]+)\)/)?.[1]?.split(',').map(Number);
+          if(values?.length>=2) scale=Math.sqrt(values[0]*values[0]+values[1]*values[1])||1;
+        }
+      }
+
+      box.classList.toggle('singlePhotoZoomed',single && scale>1.015 && box.classList.contains('active'));
+    });
+  }
+
+  new MutationObserver(update).observe(img,{attributes:true,attributeFilter:['style','src','class']});
+  new MutationObserver(update).observe(counter,{childList:true,characterData:true,subtree:true});
+  new MutationObserver(update).observe(box,{attributes:true,attributeFilter:['class']});
+  img.addEventListener('load',update);
+  window.addEventListener('resize',update,{passive:true});
+  box.addEventListener('touchmove',update,{passive:true});
+  box.addEventListener('touchend',update,{passive:true});
+  box.addEventListener('pointermove',update,{passive:true});
+  box.addEventListener('pointerup',update,{passive:true});
+  update();
+})();
+</script>
+<!-- 2026-07-11 final fix: keep viewer metadata stationary across mixed photo ratios -->
+<style>
+/*
+  가로형/세로형 사진이 서로 바뀌어도 Day·부위·장수 표시는
+  사진의 실제 렌더링 높이를 따라가지 않고 뷰어의 고정 영역에 유지합니다.
+  기존 photoAdjacentMeta 스크립트가 계산한 --viewer-meta-top 값은 사용하지 않습니다.
+*/
+#lightbox.unifiedPhotoViewer .viewerMetaWrap{
+  top:auto !important;
+  bottom:max(30px,calc(env(safe-area-inset-bottom) + 22px)) !important;
+  transform:translateX(-50%) !important;
+  transition:none !important;
+  will-change:auto !important;
+}
+#lightbox.unifiedPhotoViewer .lightboxMeta,
+#lightbox.unifiedPhotoViewer .viewerCounter{
+  transform:none !important;
+  transition:none !important;
+}
+
+/* 글자 고정 영역과 사진이 겹치지 않도록 모든 사진에 같은 하단 안전영역을 확보합니다. */
+#lightbox.unifiedPhotoViewer .viewerSlide{
+  padding-top:max(64px,calc(env(safe-area-inset-top) + 56px)) !important;
+  padding-bottom:max(112px,calc(env(safe-area-inset-bottom) + 104px)) !important;
+}
+
+/* 한 장 보기의 확대 중 숨김/복원도 위치 이동 없이 즉시 처리합니다. */
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .viewerMetaWrap,
+#lightbox.unifiedPhotoViewer:not(.singlePhotoZoomed) .viewerMetaWrap{
+  transition:none !important;
+}
+</style>
+<script>
+(function lockViewerMetadataPosition(){
+  const box=document.getElementById('lightbox');
+  if(!box || box.dataset.fixedMetadataPosition==='1') return;
+  box.dataset.fixedMetadataPosition='1';
+
+  /* 이전 위치 계산값이 남아 있어도 고정 레이아웃만 사용합니다. */
+  const clearCalculatedPosition=()=>{
+    box.style.removeProperty('--viewer-meta-top');
+    const wrap=box.querySelector('.viewerMetaWrap');
+    if(wrap){
+      wrap.style.removeProperty('top');
+      wrap.style.removeProperty('bottom');
+      wrap.style.removeProperty('transform');
+    }
+  };
+
+  clearCalculatedPosition();
+  new MutationObserver(clearCalculatedPosition).observe(box,{attributes:true,attributeFilter:['style','class']});
+  window.addEventListener('resize',clearCalculatedPosition,{passive:true});
+  window.visualViewport?.addEventListener('resize',clearCalculatedPosition,{passive:true});
 })();
 </script>
