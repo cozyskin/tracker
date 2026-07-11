@@ -5314,5 +5314,265 @@ showPhotoPanel=async function(panel){
   }
 })();
 </script>
+
+
+<!-- 2026-07-12 Galaxy Chrome photo registration/loading + footer/memo final fix -->
+<style>
+/* 전체 기록 카드의 실제 끝과 고정 하단 메뉴 사이에 안정적인 여백을 확보합니다. */
+#timelineFooterSpacer{min-height:0;transition:none!important;}
+#photoTimelinePanel .guideBox{margin-bottom:0!important;}
+/* 사진 처리 중에는 중복 터치를 막되 카드 레이아웃은 유지합니다. */
+.photoSlot.photoProcessing{pointer-events:none;opacity:.78;}
+.photoSlot .androidPhotoStatus{font-size:11px;color:var(--muted);line-height:1.4;padding:8px 2px;}
+</style>
+<script>
+(function galaxyChromePhotoFinalFix(){
+  if(window.__galaxyChromePhotoFinalFixApplied) return;
+  window.__galaxyChromePhotoFinalFixApplied=true;
+
+  const PHOTO_LOAD_TIMEOUT=8000;
+
+  /* Android Chrome requires file-input activation to remain in the original tap event.
+     Do not delay input.click() with setTimeout. */
+  window.openPhotoPicker=function(inputId){
+    closePhotoPartMenus();
+    const input=document.getElementById(inputId);
+    if(!input) return;
+    const slot=input.closest('.photoSlot');
+    if(slot) ensureAboveBottomNav(slot,16,'auto');
+    try{ input.value=''; }catch(_){ }
+    try{
+      if(typeof input.showPicker==='function') input.showPicker();
+      else input.click();
+    }catch(_){
+      /* showPicker can be unavailable or rejected; synchronous click is the safe fallback. */
+      try{ input.click(); }catch(__){ alert('사진 선택창을 열지 못했습니다. 다시 한 번 눌러주세요.'); }
+    }
+  };
+  openPhotoPicker=window.openPhotoPicker;
+
+  function withTimeout(promise,ms,label){
+    return Promise.race([
+      promise,
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error(label||'timeout')),ms))
+    ]);
+  }
+
+  function fileToObjectURL(file){
+    return URL.createObjectURL(file);
+  }
+
+  async function decodePhotoFile(file){
+    if(!file || !file.type || !file.type.startsWith('image/')) throw new Error('not-image');
+
+    /* createImageBitmap is more reliable for large Android camera images and EXIF orientation. */
+    if(typeof createImageBitmap==='function'){
+      try{
+        return await withTimeout(createImageBitmap(file,{imageOrientation:'from-image'}),PHOTO_LOAD_TIMEOUT,'bitmap-timeout');
+      }catch(_){ }
+    }
+
+    const objectUrl=fileToObjectURL(file);
+    try{
+      return await withTimeout(new Promise((resolve,reject)=>{
+        const img=new Image();
+        img.onload=()=>resolve(img);
+        img.onerror=()=>reject(new Error('image-decode-failed'));
+        img.src=objectUrl;
+        if(img.complete && img.naturalWidth>0) resolve(img);
+      }),PHOTO_LOAD_TIMEOUT,'image-timeout');
+    }finally{
+      /* Revocation after decode is safe; the decoded image is already in memory. */
+      setTimeout(()=>URL.revokeObjectURL(objectUrl),0);
+    }
+  }
+
+  function canvasToDataURL(canvas,quality){
+    try{return canvas.toDataURL('image/jpeg',quality);}catch(_){return '';}
+  }
+
+  window.compressPhoto=async function(file){
+    const decoded=await decodePhotoFile(file);
+    try{
+      const sourceW=decoded.width||decoded.naturalWidth||0;
+      const sourceH=decoded.height||decoded.naturalHeight||0;
+      if(!sourceW||!sourceH) throw new Error('invalid-dimensions');
+
+      /* Limit pixel count as well as side length to avoid Android canvas-memory failures. */
+      const maxSide=1200;
+      const maxPixels=1200*1600;
+      let scale=Math.min(1,maxSide/Math.max(sourceW,sourceH),Math.sqrt(maxPixels/(sourceW*sourceH)));
+      if(!Number.isFinite(scale)||scale<=0) scale=1;
+      const w=Math.max(1,Math.round(sourceW*scale));
+      const h=Math.max(1,Math.round(sourceH*scale));
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d',{alpha:false});
+      if(!ctx) throw new Error('canvas-context-failed');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+      ctx.drawImage(decoded,0,0,w,h);
+      const result=canvasToDataURL(canvas,0.8);
+      canvas.width=1;canvas.height=1;
+      if(!result || result==='data:,') throw new Error('canvas-export-failed');
+      return result;
+    }finally{
+      if(decoded && typeof decoded.close==='function') decoded.close();
+    }
+  };
+  compressPhoto=window.compressPhoto;
+
+  /* IndexedDB reads must always settle, so a broken/missing entry cannot leave
+     “사진 불러오는 중...” on screen forever. */
+  const originalGetPhoto=window.getPhoto||getPhoto;
+  window.getPhoto=async function(id){
+    if(!id) return null;
+    try{
+      const value=await withTimeout(Promise.resolve(originalGetPhoto(id)),PHOTO_LOAD_TIMEOUT,'db-read-timeout');
+      return (typeof value==='string' || value instanceof Blob) ? value : null;
+    }catch(err){
+      console.warn('photo read failed',id,err);
+      return null;
+    }
+  };
+  getPhoto=window.getPhoto;
+
+  /* Preserve the current photo until the newly selected image has been fully
+     decoded, compressed and stored. This prevents broken cards on failure. */
+  window.addPhoto=async function(event,d,slot){
+    const input=event?.target;
+    const file=input?.files?.[0];
+    if(!file) return;
+    const slotEl=document.getElementById('photoSlot'+slot);
+    slotEl?.classList.add('photoProcessing');
+    const oldStatus=slotEl?.querySelector('.androidPhotoStatus');
+    oldStatus?.remove();
+    try{
+      const data=await compressPhoto(file);
+      const id=`day${d}_photo${slot}_${Date.now()}`;
+      await withTimeout(putPhoto(id,data),PHOTO_LOAD_TIMEOUT,'db-write-timeout');
+
+      const photos=(dayData(d).photos||[]).slice();
+      const previous=photos[slot];
+      const selected=document.getElementById(`photoPartControl_${d}_${slot}`)?.dataset.value;
+      photos[slot]={id,part:selected||previous?.part||photoParts[slot]||'정면',savedAt:new Date().toISOString()};
+      state.days[d]={...dayData(d),photos};
+      localStorage.setItem(KEY,JSON.stringify(state));
+
+      if(previous?.id && previous.id!==id){
+        try{await removePhotoData(previous.id);}catch(_){ }
+      }
+
+      await renderPhotos();
+      ensurePhotoSlotVisible(slot,16);
+      scheduleRecordPhotoFooterVisibility(slot);
+      if(document.getElementById('report')?.classList.contains('active')) await renderCompare();
+    }catch(err){
+      console.error('photo registration failed',err);
+      alert('사진을 등록하지 못했습니다. 사진 앱에서 이미지를 다시 선택해 주세요. 계속 발생하면 브라우저 탭을 닫았다가 다시 열어주세요.');
+      /* Re-render restores an existing photo and removes any permanent loading text. */
+      try{await renderPhotos();}catch(_){ }
+    }finally{
+      slotEl?.classList.remove('photoProcessing');
+      try{if(input) input.value='';}catch(_){ }
+    }
+  };
+  addPhoto=window.addPhoto;
+
+  /* Any unresolved or missing IndexedDB image is rendered as a recoverable state,
+     never as an endless loading label. */
+  const originalRenderPhotos=window.renderPhotos||renderPhotos;
+  window.renderPhotos=async function(){
+    try{
+      await withTimeout(Promise.resolve(originalRenderPhotos()),PHOTO_LOAD_TIMEOUT+2500,'render-photos-timeout');
+    }catch(err){
+      console.warn('renderPhotos recovery',err);
+    }finally{
+      document.querySelectorAll('#photoGrid .loadingText').forEach(el=>{
+        el.className='androidPhotoStatus';
+        el.textContent='사진을 불러오지 못했습니다. 변경 버튼으로 다시 등록해 주세요.';
+      });
+    }
+  };
+  renderPhotos=window.renderPhotos;
+
+  /* Empty memo placeholder always starts at its first line on both Safari and Chrome. */
+  const originalLoadForm=window.loadForm||loadForm;
+  window.loadForm=function(){
+    const result=originalLoadForm();
+    const resetMemo=()=>{
+      const memoEl=document.getElementById('memo');
+      if(!memoEl || memoEl.value.trim()) return;
+      memoEl.scrollTop=0;
+      memoEl.scrollLeft=0;
+      try{memoEl.setSelectionRange(0,0);}catch(_){ }
+    };
+    resetMemo();
+    requestAnimationFrame(resetMemo);
+    setTimeout(resetMemo,80);
+    return result;
+  };
+  loadForm=window.loadForm;
+
+  /* Full Record transition: wait for the rendered images, create real scroll range,
+     then align the OUTER photo card above the fixed navigation with a 24px gap. */
+  function waitTimelineImages(){
+    const imgs=Array.from(document.querySelectorAll('#photoTimeline img'));
+    if(!imgs.length) return Promise.resolve();
+    return Promise.all(imgs.map(img=>{
+      if(img.complete) return Promise.resolve();
+      return new Promise(resolve=>{
+        const done=()=>resolve();
+        img.addEventListener('load',done,{once:true});
+        img.addEventListener('error',done,{once:true});
+        setTimeout(done,1200);
+      });
+    }));
+  }
+
+  window.scheduleTimelineFooterVisibility=function(){
+    const run=async()=>{
+      if(currentPhotoPanel!=='timeline') return;
+      const report=document.getElementById('report');
+      const panel=document.getElementById('photoTimelinePanel');
+      const nav=document.querySelector('.tabs');
+      if(!report?.classList.contains('active')||!panel||!nav) return;
+      await waitTimelineImages();
+      if(currentPhotoPanel!=='timeline') return;
+
+      const outerCard=panel.closest('.card');
+      const spacer=getTimelineFooterSpacer();
+      if(!outerCard||!spacer) return;
+      const gap=24;
+      spacer.style.height='0px';
+      void spacer.offsetHeight;
+
+      const viewport=window.visualViewport?.height||window.innerHeight||document.documentElement.clientHeight;
+      const currentY=window.scrollY||document.documentElement.scrollTop||0;
+      const navTop=nav.getBoundingClientRect().top;
+      const desiredY=currentY+Math.max(0,Math.ceil(outerCard.getBoundingClientRect().bottom-(navTop-gap)));
+      const docHeight=Math.max(document.documentElement.scrollHeight,document.body?.scrollHeight||0);
+      const maxBefore=Math.max(0,docHeight-viewport);
+      const missing=Math.max(0,Math.ceil(desiredY-maxBefore));
+      spacer.style.height=`${missing+gap}px`;
+      void spacer.offsetHeight;
+
+      const finalMax=Math.max(0,Math.max(document.documentElement.scrollHeight,document.body?.scrollHeight||0)-viewport);
+      const finalY=Math.min(finalMax,desiredY);
+      if(typeof animateTimelineReveal==='function') animateTimelineReveal(finalY,140);
+      else window.scrollTo({top:finalY,left:0,behavior:'auto'});
+    };
+    requestAnimationFrame(()=>requestAnimationFrame(run));
+    setTimeout(run,180);
+  };
+  scheduleTimelineFooterVisibility=window.scheduleTimelineFooterVisibility;
+
+  /* Re-apply the empty-memo top position after browser back/forward cache restoration. */
+  window.addEventListener('pageshow',()=>{
+    const record=document.getElementById('record');
+    if(record?.classList.contains('active')) loadForm();
+  },{passive:true});
+})();
+</script>
+
 </body>
 </html>
