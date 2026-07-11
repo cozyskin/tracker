@@ -4419,7 +4419,7 @@ showPhotoPanel=async function(panel){
 </script>
 <!-- 2026-07-11 definitive photo viewer replacement: removes all previous lightbox gesture handlers -->
 <style>
-#lightbox.unifiedPhotoViewer{padding:0!important;background:rgba(0,0,0,.88)!important;overflow:hidden!important;touch-action:none!important}
+#lightbox.unifiedPhotoViewer{padding:0!important;background:#000!important;overflow:hidden!important;touch-action:none!important;isolation:isolate!important}
 #lightbox.unifiedPhotoViewer .lightboxContent{position:absolute!important;inset:0!important;max-width:none!important;max-height:none!important;width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;touch-action:none!important;text-align:center!important}
 #lightbox.unifiedPhotoViewer .viewerViewport{position:absolute;inset:0;overflow:hidden;touch-action:none}
 #lightbox.unifiedPhotoViewer .viewerTrack{position:absolute;left:0;top:0;width:300%;height:100%;display:flex;transform:translate3d(-33.333333%,0,0);will-change:transform;touch-action:none}
@@ -4427,11 +4427,11 @@ showPhotoPanel=async function(panel){
 #lightbox.unifiedPhotoViewer .viewerTrack.settling{transition:transform .30s cubic-bezier(.22,.72,.28,1)!important}
 #lightbox.unifiedPhotoViewer .viewerSlide{width:33.333333%;height:100%;flex:0 0 33.333333%;display:flex;align-items:center;justify-content:center;padding:64px 18px 92px;overflow:hidden}
 #lightbox.unifiedPhotoViewer .viewerSlide img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:16px;transform:translate3d(0,0,0) scale(1);transform-origin:center center;will-change:transform;-webkit-user-drag:none;user-select:none;-webkit-user-select:none;touch-action:none}
-#lightbox.unifiedPhotoViewer .viewerSlide.edge img{opacity:.42}
+#lightbox.unifiedPhotoViewer .viewerSlide.edge img{opacity:1!important}
 #lightbox.unifiedPhotoViewer .closeLightbox{position:absolute!important;right:14px!important;top:max(14px,env(safe-area-inset-top))!important;z-index:40!important;width:42px!important;height:42px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important}
-#lightbox.unifiedPhotoViewer .viewerMetaWrap{position:absolute;left:50%;bottom:max(22px,calc(env(safe-area-inset-bottom) + 14px));transform:translateX(-50%);z-index:35;color:#fff;text-align:center;pointer-events:none;min-width:120px}
-#lightbox.unifiedPhotoViewer .lightboxMeta{margin:0!important;font-size:14px!important;font-weight:800!important;text-shadow:0 1px 5px rgba(0,0,0,.35)}
-#lightbox.unifiedPhotoViewer .viewerCounter{margin-top:4px;font-size:12px;color:rgba(255,255,255,.76);font-weight:800;min-height:18px}
+#lightbox.unifiedPhotoViewer .viewerMetaWrap{position:absolute!important;left:50%!important;bottom:max(20px,calc(env(safe-area-inset-bottom) + 14px))!important;transform:translateX(-50%)!important;z-index:50!important;color:#fff!important;text-align:center!important;pointer-events:none!important;display:block!important;visibility:visible!important;opacity:1!important;width:calc(100% - 112px)!important;max-width:420px!important;min-width:160px!important;padding:8px 14px 7px!important;border-radius:14px!important;background:rgba(0,0,0,.42)!important;backdrop-filter:blur(5px)!important;-webkit-backdrop-filter:blur(5px)!important}
+#lightbox.unifiedPhotoViewer .lightboxMeta{display:block!important;visibility:visible!important;opacity:1!important;margin:0!important;color:#fff!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;min-height:19px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-shadow:0 1px 5px rgba(0,0,0,.55)!important}
+#lightbox.unifiedPhotoViewer .viewerCounter{display:block!important;visibility:visible!important;opacity:1!important;margin-top:3px!important;font-size:12px!important;line-height:1.3!important;color:rgba(255,255,255,.82)!important;font-weight:800!important;min-height:16px!important}
 #lightbox.unifiedPhotoViewer .viewerNav{position:absolute;top:50%;transform:translateY(-50%);z-index:38;width:44px;height:44px;border:0;border-radius:999px;background:rgba(17,24,39,.38);color:#fff;font-size:32px;line-height:1;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .20s ease,visibility 0s linear .20s;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer}
 #lightbox.unifiedPhotoViewer .viewerNav.available.awake{opacity:.78;visibility:visible;transition-delay:0s}
 #lightbox.unifiedPhotoViewer .viewerNav.prev{left:12px}.unifiedPhotoViewer .viewerNav.next{right:12px}
@@ -4539,6 +4539,7 @@ showPhotoPanel=async function(panel){
   async function paint(){
     const version=++loadVersion;
     resetZoom(false);trackCenter(false);
+    updateControls();
     await Promise.all([
       setImage(images.prev,items[index-1],true,version),
       setImage(images.current,items[index],false,version),
@@ -4580,10 +4581,18 @@ showPhotoPanel=async function(panel){
     if(target<0||target>=items.length){trackCenter(true);wakeNav();return;}
     animating=true;sleepNav();track.classList.remove('dragging');track.classList.add('settling');
     track.style.transform=direction>0?'translate3d(-66.666666%,0,0)':'translate3d(0,0,0)';
+    let finished=false;
     const finish=async()=>{
-      track.removeEventListener('transitionend',finish);index=target;await paint();animating=false;
+      if(finished) return;
+      finished=true;
+      track.removeEventListener('transitionend',finish);
+      index=target;
+      updateControls();
+      await paint();
+      animating=false;
     };
-    track.addEventListener('transitionend',finish,{once:true});setTimeout(finish,420);
+    track.addEventListener('transitionend',finish,{once:true});
+    setTimeout(finish,420);
   }
 
   viewport.addEventListener('touchstart',e=>{
@@ -4651,3 +4660,14 @@ showPhotoPanel=async function(panel){
   openLightbox=openSingle;openLightboxGallery=openGallery;closeLightbox=close;
 })();
 </script>
+<style>
+/* 2026-07-11 final photo viewer visibility safeguards */
+#lightbox.unifiedPhotoViewer.active{display:flex!important;background-color:#000!important;background-image:none!important;opacity:1!important;}
+#lightbox.unifiedPhotoViewer .viewerViewport,
+#lightbox.unifiedPhotoViewer .viewerTrack,
+#lightbox.unifiedPhotoViewer .viewerSlide{background:#000!important;}
+#lightbox.unifiedPhotoViewer .viewerSlide img{opacity:1!important;visibility:visible!important;}
+#lightbox.unifiedPhotoViewer .viewerMetaWrap,
+#lightbox.unifiedPhotoViewer #lightboxMeta,
+#lightbox.unifiedPhotoViewer .viewerCounter{display:block!important;visibility:visible!important;opacity:1!important;}
+</style>
