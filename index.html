@@ -2105,6 +2105,7 @@ function metric(name,val,pct){return `<div class="metric"><strong>${name}</stron
 const photoParts=['정면','좌측','우측','이마','턱'];
 const PHOTO_DB='skin14_photo_db_v2', PHOTO_STORE='photos';
 let currentComparePart='';
+const lightboxContent=document.querySelector('#lightbox .lightboxContent');
 let currentPhotoPanel='compare';
 let currentSliderCompare=null;
 let modalScrollY=0;
@@ -3175,7 +3176,7 @@ showPhotoPanel=async function(panel){
 </script>
 
 
-/* 2026-07-11 corrected scope: gallery only in detail popups and Full Record */
+<!-- 2026-07-11 corrected scope: gallery only in detail popups and Full Record -->
 <style>
 /* Large, photo-inside navigation with a generous invisible touch target. */
 .lightboxNav.finalGalleryNav{
@@ -3424,8 +3425,8 @@ showPhotoPanel=async function(panel){
   if(meta) new MutationObserver(ensureCounter).observe(meta,{childList:true,characterData:true,subtree:true});
 })();
 </script>
-</body>
-</html>
+
+
 
 <style>
 /* 2026-07-11 lightbox interaction repair */
@@ -5086,12 +5087,17 @@ showPhotoPanel=async function(panel){
      metaPreparing/zoomed 같은 내부 클래스 변경은 다시 감지해 실행하지 않습니다. */
   new MutationObserver(()=>{
     const active=box.classList.contains('active');
-    if(active&&!wasActive) prepare();
-    if(!active){
-      box.classList.remove('metaPreparing','singlePhotoZoomActive');
+    if(active&&!wasActive){
+      wasActive=true;
+      prepare();
+      return;
+    }
+    if(!active&&wasActive){
+      wasActive=false;
+      if(box.classList.contains('metaPreparing')) box.classList.remove('metaPreparing');
+      if(box.classList.contains('singlePhotoZoomActive')) box.classList.remove('singlePhotoZoomActive');
       version++;
     }
-    wasActive=active;
   }).observe(box,{attributes:true,attributeFilter:['class']});
 
   const resize=()=>{if(box.classList.contains('active')) prepare();};
@@ -5120,3 +5126,5 @@ showPhotoPanel=async function(panel){
   if(wasActive) prepare();
 })();
 </script>
+</body>
+</html>
