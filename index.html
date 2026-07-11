@@ -2553,6 +2553,82 @@ function renderAll(){renderHome();renderDayGrid();renderTable();renderReport();r
 
 /* Photo controls use normal click activation.
    Preventing touchstart previously blocked the custom part selector on mobile. */
+
+
+/* 2026-07-11 final isolated speed/spacing correction
+   - Photo-part dropdown opens immediately; reserve and scroll are applied without smooth delay.
+   - Full-photo timeline uses one measured, immediate correction and preserves an 18px gap above the fixed nav.
+   These overrides do not change photo storage, deletion, comparison, carousel sizing, or popup behavior. */
+function togglePhotoPartMenu(event,id){
+  event.stopPropagation();
+  const control=document.getElementById(id); if(!control) return;
+  const willOpen=!control.classList.contains('open');
+  closePhotoPartMenus(control);
+  control.classList.remove('openUp');
+  control.classList.toggle('open',willOpen);
+  control.querySelector('.photoPartBtn')?.setAttribute('aria-expanded',String(willOpen));
+
+  const card=document.getElementById('photoGrid')?.closest('.card');
+  const record=document.getElementById('record');
+  if(!willOpen){
+    card?.classList.remove('photoMenuSpace');
+    card?.style.removeProperty('--open-photo-menu-height');
+    record?.classList.remove('photoDropdownOpen');
+    record?.style.removeProperty('--photo-dropdown-reserve');
+    return;
+  }
+
+  /* The open class is already applied, so the menu is visible immediately. */
+  const menu=control.querySelector('.photoPartMenu');
+  const nav=document.querySelector('.tabs');
+  if(!menu||!nav) return;
+
+  const menuHeight=Math.ceil(menu.getBoundingClientRect().height||145);
+  const navHeight=Math.ceil(nav.getBoundingClientRect().height||78);
+  const safeGap=16;
+
+  /* Reserve scroll range only on the active record section; no animated growth. */
+  if(record){
+    record.style.setProperty('--photo-dropdown-reserve',`${menuHeight+navHeight+safeGap}px`);
+    record.classList.add('photoDropdownOpen');
+    void record.offsetHeight;
+  }
+
+  const overflow=Math.ceil(menu.getBoundingClientRect().bottom-(nav.getBoundingClientRect().top-safeGap));
+  if(overflow>0) window.scrollBy(0,overflow);
+}
+
+function scheduleTimelineFooterVisibility(){
+  const run=()=>{
+    if(currentPhotoPanel!=='timeline') return;
+    const report=document.getElementById('report');
+    if(!report?.classList.contains('active')) return;
+    const panel=document.getElementById('photoTimelinePanel');
+    const target=panel?.querySelector('.guideBox') || panel;
+    const nav=document.querySelector('.tabs');
+    if(!target||!nav) return;
+
+    const gap=18;
+    report.style.setProperty('--timeline-auto-footer-space','0px');
+    void report.offsetHeight;
+
+    const current=window.scrollY||document.documentElement.scrollTop||0;
+    const desired=current+target.getBoundingClientRect().bottom-(nav.getBoundingClientRect().top-gap);
+    const viewport=window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+    const docHeight=Math.max(document.documentElement.scrollHeight,document.body?.scrollHeight||0);
+    const maxBefore=Math.max(0,docHeight-viewport);
+    const shortage=Math.max(0,Math.ceil(desired-maxBefore));
+
+    report.style.setProperty('--timeline-auto-footer-space',`${shortage}px`);
+    void report.offsetHeight;
+
+    const delta=Math.ceil(target.getBoundingClientRect().bottom-(nav.getBoundingClientRect().top-gap));
+    if(delta>0) window.scrollBy(0,delta);
+  };
+
+  /* One frame allows the newly rendered card and images to establish their final geometry. */
+  requestAnimationFrame(run);
+}
 </script>
 </body>
 </html>
