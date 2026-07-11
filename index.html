@@ -1567,6 +1567,18 @@ html{
 #record.photoDropdownOpen{
   padding-bottom:var(--photo-dropdown-reserve, 0px) !important;
 }
+
+
+/* 2026-07-11 isolated footer-gap correction
+   Adds only the minimum extra document length required after the active section.
+   Dropdown spacing remains controlled by the existing photoDropdownOpen logic. */
+#record.view.active{
+  margin-bottom:var(--record-auto-footer-space, 0px) !important;
+}
+#report.view.active{
+  margin-bottom:var(--timeline-auto-footer-space, 0px) !important;
+}
+
 </style>
 </head>
 <body>
@@ -1636,6 +1648,8 @@ function today(){for(let i=1;i<=14;i++) if(!isComplete(i)) return i;return 14}
 function isUnlocked(d){return d<=today() || isComplete(d)}
 function showView(id){
   closeBalanceHelp();
+  if(id!=='record') document.getElementById('record')?.style.removeProperty('--record-auto-footer-space');
+  if(id!=='report') document.getElementById('report')?.style.removeProperty('--timeline-auto-footer-space');
   closePhotoPartMenus();
 
   /* Returning to Report always starts from Photo Compare and the first saved part. */
@@ -1995,44 +2009,85 @@ function ensurePhotoSlotVisible(slotOrElement, extra=14){
   requestAnimationFrame(()=>ensureAboveBottomNav(el,extra,'smooth'));
 }
 
-/* Measure the actual fixed navigation on the current device/browser instead of
-   relying on a phone-specific pixel value. */
-function ensureFooterAboveBottomNav(target, gap=16, behavior='smooth'){
-  const el=typeof target==='string'?document.querySelector(target):target;
-  const nav=document.querySelector('.tabs');
-  if(!el||!nav) return;
-  const navTop=nav.getBoundingClientRect().top;
-  const bottom=el.getBoundingClientRect().bottom;
-  const delta=Math.ceil(bottom-(navTop-gap));
-  if(delta>0) window.scrollBy({top:delta,left:0,behavior});
+/* Keep a requested element above the fixed bottom navigation using only the
+   minimum extra scroll range required on the current viewport/browser. */
+function viewportHeightNow(){
+  return window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+}
+function pageMaxScroll(){
+  const doc=document.documentElement;
+  return Math.max(0,Math.max(doc.scrollHeight,document.body?.scrollHeight||0)-viewportHeightNow());
+}
+function quickScrollTo(targetY,duration=150){
+  const max=pageMaxScroll();
+  const end=Math.max(0,Math.min(max,targetY));
+  const start=window.scrollY||document.documentElement.scrollTop||0;
+  const distance=end-start;
+  if(Math.abs(distance)<2) return;
+  if(Math.abs(distance)<=80 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+    window.scrollTo(0,end);return;
+  }
+  const started=performance.now();
+  const ease=t=>1-Math.pow(1-t,3);
+  const step=now=>{
+    const p=Math.min(1,(now-started)/duration);
+    window.scrollTo(0,start+distance*ease(p));
+    if(p<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function reserveAndRevealFooter(target,section,cssVar,gap=18,{move=true,duration=150}={}){
+  if(!target||!section) return;
+  section.style.setProperty(cssVar,'0px');
+  requestAnimationFrame(()=>{
+    const nav=document.querySelector('.tabs');
+    if(!nav) return;
+    const current=window.scrollY||document.documentElement.scrollTop||0;
+    const navTop=nav.getBoundingClientRect().top;
+    const desired=current+target.getBoundingClientRect().bottom-(navTop-gap);
+    const shortage=Math.max(0,Math.ceil(desired-pageMaxScroll()));
+    section.style.setProperty(cssVar,`${shortage}px`);
+    requestAnimationFrame(()=>{
+      if(!move) return;
+      const freshNavTop=nav.getBoundingClientRect().top;
+      const delta=Math.ceil(target.getBoundingClientRect().bottom-(freshNavTop-gap));
+      if(delta>0) quickScrollTo((window.scrollY||0)+delta,duration);
+    });
+  });
 }
 function scheduleRecordPhotoFooterVisibility(preferredSlot){
   const run=()=>{
-    if(!document.getElementById('record')?.classList.contains('active')) return;
+    const record=document.getElementById('record');
+    if(!record?.classList.contains('active')) return;
     const card=document.getElementById('photoGrid')?.closest('.card');
     if(!card) return;
-    /* The card edge is the stable target: this keeps the last buttons visible
-       and leaves one small, natural gap above the navigation. */
-    ensureFooterAboveBottomNav(card,16,'smooth');
+    /* The outer card edge is the final visual boundary. The slot is checked too,
+       so buttons remain visible after adding, registering or deleting photos. */
+    let target=card;
     if(Number.isInteger(preferredSlot)){
       const slot=document.getElementById('photoSlot'+preferredSlot);
-      if(slot) ensureFooterAboveBottomNav(slot,16,'smooth');
+      if(slot && slot.getBoundingClientRect().bottom>target.getBoundingClientRect().bottom) target=slot;
     }
-  };
-  requestAnimationFrame(()=>requestAnimationFrame(run));
-  setTimeout(run,90);
-}
-function scheduleTimelineFooterVisibility(){
-  const run=()=>{
-    if(currentPhotoPanel!=='timeline') return;
-    if(!document.getElementById('report')?.classList.contains('active')) return;
-    const panel=document.getElementById('photoTimelinePanel');
-    const card=panel?.querySelector('.guideBox') || panel;
-    if(card) ensureFooterAboveBottomNav(card,16,'smooth');
+    reserveAndRevealFooter(target,record,'--record-auto-footer-space',18,{move:true,duration:145});
   };
   requestAnimationFrame(()=>requestAnimationFrame(run));
   setTimeout(run,100);
 }
+function scheduleTimelineFooterVisibility(){
+  const run=()=>{
+    if(currentPhotoPanel!=='timeline') return;
+    const report=document.getElementById('report');
+    if(!report?.classList.contains('active')) return;
+    const panel=document.getElementById('photoTimelinePanel');
+    const card=panel?.querySelector('.guideBox') || panel;
+    if(!card) return;
+    /* Fast, short movement and a measured 18px visual gap above the navigation. */
+    reserveAndRevealFooter(card,report,'--timeline-auto-footer-space',18,{move:true,duration:145});
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(run));
+  setTimeout(run,80);
+}
+
 
 function closePhotoPartMenus(except){
   document.querySelectorAll('.photoPartControl.open').forEach(el=>{
@@ -2267,6 +2322,7 @@ function bestComparePart(by){
 }
 async function showPhotoPanel(panel){
   currentPhotoPanel=panel;
+  if(panel!=='timeline') document.getElementById('report')?.style.removeProperty('--timeline-auto-footer-space');
   const cp=document.getElementById('photoComparePanel'), tp=document.getElementById('photoTimelinePanel');
   const ct=document.getElementById('compareTab'), tt=document.getElementById('timelineTab');
   if(cp&&tp){cp.style.display=panel==='compare'?'block':'none';tp.style.display=panel==='timeline'?'block':'none';}
