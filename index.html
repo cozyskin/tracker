@@ -3376,3 +3376,120 @@ showPhotoPanel=async function(panel){
 
 </body>
 </html>
+
+<style>
+/* 2026-07-11 lightbox interaction repair */
+#lightbox .closeLightbox{z-index:1010;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+#lightbox.galleryMode .lightboxContent{touch-action:pan-y!important;}
+#lightbox.singleMode .lightboxContent{touch-action:pan-x pan-y pinch-zoom!important;}
+#lightbox.singleMode .lightboxContent img{pointer-events:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-user-drag:none!important;}
+#lightbox.galleryMode .lightboxContent img{pointer-events:none!important;-webkit-user-drag:none!important;}
+.lightboxNav.finalGalleryNav{
+  opacity:0!important;visibility:hidden!important;
+  transition:opacity .22s ease,visibility 0s linear .22s!important;
+}
+.lightboxNav.finalGalleryNav.show.navVisible{
+  opacity:.82!important;visibility:visible!important;transition-delay:0s!important;
+}
+.lightboxNav.finalGalleryNav{top:var(--lightbox-nav-top,50%)!important;}
+.lightboxContent.gallerySlide img{transition:opacity .12s ease,transform .12s ease;}
+.lightboxContent.gallerySlide.switching img{opacity:.45;transform:scale(.992);}
+</style>
+<script>
+(function(){
+  const box=document.getElementById('lightbox');
+  if(!box || box.dataset.repaired==='1') return;
+  box.dataset.repaired='1';
+
+  let navFadeTimer=0;
+  function showNavBriefly(){
+    if(!box.classList.contains('galleryMode')) return;
+    clearTimeout(navFadeTimer);
+    document.querySelectorAll('#lightbox .finalGalleryNav.show').forEach(b=>b.classList.add('navVisible'));
+    navFadeTimer=setTimeout(()=>document.querySelectorAll('#lightbox .finalGalleryNav').forEach(b=>b.classList.remove('navVisible')),1250);
+  }
+  function hideNav(){
+    clearTimeout(navFadeTimer);
+    document.querySelectorAll('#lightbox .finalGalleryNav').forEach(b=>b.classList.remove('navVisible'));
+  }
+
+  /* X always closes; stop propagation so the background handler cannot interfere. */
+  const closeBtn=box.querySelector('.closeLightbox');
+  if(closeBtn){
+    closeBtn.onclick=function(e){e.preventDefault();e.stopPropagation();window.closeLightbox();};
+    closeBtn.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();window.closeLightbox();},{passive:false});
+  }
+
+  /* Wrap both open modes only to mark the interaction mode. */
+  const oldSingle=window.openLightbox;
+  const oldGallery=window.openLightboxGallery;
+  window.openLightbox=async function(id,meta){
+    box.classList.remove('galleryMode');box.classList.add('singleMode');hideNav();
+    return oldSingle(id,meta);
+  };
+  openLightbox=window.openLightbox;
+  window.openLightboxGallery=async function(id,meta){
+    box.classList.remove('singleMode');box.classList.add('galleryMode');
+    const result=await oldGallery(id,meta);
+    requestAnimationFrame(showNavBriefly);
+    return result;
+  };
+
+  const oldClose=window.closeLightbox;
+  window.closeLightbox=function(){
+    hideNav();box.classList.remove('galleryMode','singleMode');
+    return oldClose();
+  };
+  closeLightbox=window.closeLightbox;
+
+  /* Rebind gallery swipe with touch events for smoother mobile behavior. */
+  function installSmoothSwipe(){
+    let content=box.querySelector('.lightboxContent');
+    if(!content) return;
+    if(content.dataset.interactionRebuilt!=='1'){
+      const fresh=content.cloneNode(true);
+      fresh.dataset.interactionRebuilt='1';
+      content.replaceWith(fresh);
+      content=fresh;
+    }
+    if(content.dataset.smoothSwipe==='1') return;
+    content.dataset.smoothSwipe='1';
+    content.classList.add('gallerySlide');
+    let sx=0,sy=0,lastX=0,tracking=false,horizontal=false;
+    content.addEventListener('touchstart',e=>{
+      if(!box.classList.contains('galleryMode') || e.touches.length!==1) return;
+      const t=e.touches[0];sx=lastX=t.clientX;sy=t.clientY;tracking=true;horizontal=false;
+      showNavBriefly();
+    },{passive:true});
+    content.addEventListener('touchmove',e=>{
+      if(!tracking || e.touches.length!==1) return;
+      const t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;lastX=t.clientX;
+      if(!horizontal && Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)*1.05) horizontal=true;
+      if(horizontal) e.preventDefault();
+    },{passive:false});
+    content.addEventListener('touchend',e=>{
+      if(!tracking) return;tracking=false;
+      const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+      if(horizontal && Math.abs(dx)>=28 && Math.abs(dx)>Math.abs(dy)){
+        content.classList.add('switching');
+        const btn=dx<0?document.getElementById('lightboxNext'):document.getElementById('lightboxPrev');
+        if(btn && btn.classList.contains('show')) btn.click();
+        setTimeout(()=>content.classList.remove('switching'),140);
+      }
+    },{passive:true});
+    content.addEventListener('touchcancel',()=>{tracking=false;horizontal=false;},{passive:true});
+    content.addEventListener('click',e=>{
+      if(box.classList.contains('galleryMode')){e.stopPropagation();showNavBriefly();}
+    });
+  }
+  installSmoothSwipe();
+
+  /* Navigation taps also refresh the brief visibility period. */
+  box.addEventListener('click',e=>{
+    if(e.target.closest('.finalGalleryNav')) showNavBriefly();
+  });
+
+  const observer=new MutationObserver(()=>{installSmoothSwipe();if(box.classList.contains('galleryMode'))requestAnimationFrame(showNavBriefly);});
+  observer.observe(box,{childList:true,subtree:true});
+})();
+</script>
