@@ -3374,6 +3374,56 @@ showPhotoPanel=async function(panel){
 })();
 </script>
 
+
+<!-- 2026-07-11 final metadata visibility correction -->
+<style>
+/* The fixed bottom navigation previously sat above the viewer (z-index 3000),
+   hiding Day/part/count information. The photo viewer must be the top layer. */
+#lightbox.unifiedPhotoViewer{
+  z-index:10000!important;
+}
+#lightbox.unifiedPhotoViewer.active{
+  display:flex!important;
+}
+#lightbox.unifiedPhotoViewer .viewerMetaWrap{
+  bottom:max(22px,calc(env(safe-area-inset-bottom) + 16px))!important;
+  z-index:10020!important;
+}
+#lightbox.unifiedPhotoViewer .closeLightbox,
+#lightbox.unifiedPhotoViewer .viewerNav{
+  z-index:10030!important;
+}
+</style>
+<script>
+(function finalViewerMetadataVisibility(){
+  const box=document.getElementById('lightbox');
+  if(!box || box.dataset.metadataVisibilityFixed==='1') return;
+  box.dataset.metadataVisibilityFixed='1';
+
+  /* Keep the app navigation completely behind the full-screen photo viewer. */
+  const tabs=document.querySelector('.tabs');
+  const syncTabs=()=>{
+    if(!tabs) return;
+    tabs.setAttribute('aria-hidden',box.classList.contains('active')?'true':'false');
+  };
+  new MutationObserver(syncTabs).observe(box,{attributes:true,attributeFilter:['class']});
+  syncTabs();
+
+  /* The definitive viewer left the counter blank for a one-photo view.
+     Observe metadata/image updates and always expose current / total. */
+  const counter=box.querySelector('.viewerCounter');
+  const meta=box.querySelector('#lightboxMeta');
+  const currentImg=box.querySelector('.currentSlide img');
+  function ensureCounter(){
+    if(!counter) return;
+    if(counter.textContent.trim()) return;
+    if(box.classList.contains('active') && currentImg?.getAttribute('src')) counter.textContent='1 / 1';
+  }
+  if(counter) new MutationObserver(ensureCounter).observe(counter,{childList:true,characterData:true,subtree:true});
+  if(currentImg) new MutationObserver(ensureCounter).observe(currentImg,{attributes:true,attributeFilter:['src']});
+  if(meta) new MutationObserver(ensureCounter).observe(meta,{childList:true,characterData:true,subtree:true});
+})();
+</script>
 </body>
 </html>
 
@@ -4437,6 +4487,12 @@ showPhotoPanel=async function(panel){
 #lightbox.unifiedPhotoViewer .viewerNav.prev{left:12px}.unifiedPhotoViewer .viewerNav.next{right:12px}
 #lightbox.unifiedPhotoViewer.zoomed .viewerNav{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
 @media(max-width:380px){#lightbox.unifiedPhotoViewer .viewerSlide{padding-left:12px;padding-right:12px}.unifiedPhotoViewer .viewerNav{width:40px;height:40px;font-size:29px}.unifiedPhotoViewer .viewerNav.prev{left:8px}.unifiedPhotoViewer .viewerNav.next{right:8px}}
+
+/* 2026-07-11 끝 경계 오버드래그 차단 */
+#lightbox.unifiedPhotoViewer .viewerSlide{background:#000!important;}
+#lightbox.unifiedPhotoViewer .viewerSlide.emptyEdge img{visibility:hidden!important;opacity:0!important;}
+#lightbox.unifiedPhotoViewer .viewerViewport,
+#lightbox.unifiedPhotoViewer .viewerTrack{background:#000!important;}
 </style>
 <script>
 (function installDefinitivePhotoViewer(){
@@ -4502,7 +4558,7 @@ showPhotoPanel=async function(panel){
     prevBtn.classList.toggle('available',index>0);
     nextBtn.classList.toggle('available',index<items.length-1);
     meta.textContent=items[index]?.meta||'';
-    counter.textContent=items.length>1?`${index+1} / ${items.length}`:'';
+    counter.textContent=items.length?`${index+1} / ${items.length}`:'';
     wakeNav();
   }
   function trackCenter(animated=true){
@@ -4531,7 +4587,10 @@ showPhotoPanel=async function(panel){
     if(!animated) requestAnimationFrame(()=>images.current.style.removeProperty('transition'));
   }
   async function setImage(imgEl,item,edge=false,version=loadVersion){
-    imgEl.removeAttribute('src');imgEl.parentElement.classList.toggle('edge',edge);
+    imgEl.removeAttribute('src');
+    imgEl.style.visibility=item?'visible':'hidden';
+    imgEl.parentElement.classList.toggle('edge',edge);
+    imgEl.parentElement.classList.toggle('emptyEdge',!item);
     if(!item) return;
     const src=await photoSource(item.id);
     if(src&&version===loadVersion) imgEl.src=src;
@@ -4566,9 +4625,15 @@ showPhotoPanel=async function(panel){
     loadVersion++;animating=false;mode='';sleepNav();box.classList.remove('active','zoomed');document.body.style.overflow='';
     items=[];index=0;[images.prev,images.current,images.next].forEach(im=>im.removeAttribute('src'));meta.textContent='';counter.textContent='';resetZoom(false);trackCenter(false);
   }
+  function isBlockedEdge(dx){
+    return (dx>0&&index===0)||(dx<0&&index===items.length-1);
+  }
   function edgeResistance(dx){
-    const atStart=dx>0&&index===0,atEnd=dx<0&&index===items.length-1;
-    return (atStart||atEnd)?dx*.22:dx;
+    if(!isBlockedEdge(dx)) return dx;
+    const sign=dx<0?-1:1;
+    const amount=Math.abs(dx);
+    /* 끝에서는 강하게 당겨도 최대 26px만 움직이는 감쇠 저항 */
+    return sign*Math.min(26,amount*.10);
   }
   function setDrag(dx){
     dragX=edgeResistance(dx);
@@ -4634,6 +4699,12 @@ showPhotoPanel=async function(panel){
     const t=e.changedTouches[0],dx=t.clientX-startX,dy=t.clientY-startY,ended=mode;mode='';
     if(ended==='swipe'){
       suppressClickUntil=Date.now()+420;
+      /* 첫 장의 오른쪽, 마지막 장의 왼쪽 드래그는 전환하지 않고 제자리 복귀 */
+      if(isBlockedEdge(dx)){
+        trackCenter(true);
+        wakeNav();
+        return;
+      }
       const width=Math.max(260,viewport.clientWidth);const distanceEnough=Math.abs(dx)>=width*.27;const flick=Math.abs(dx)>=64&&Math.abs(velocityX)>.62;
       if((distanceEnough||flick)&&Math.abs(dx)>Math.abs(dy)*1.05) change(dx<0?1:-1);else trackCenter(true);
       return;
