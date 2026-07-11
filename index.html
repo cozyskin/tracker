@@ -4898,58 +4898,104 @@ showPhotoPanel=async function(panel){
   update();
 })();
 </script>
-<!-- 2026-07-11 final fix: keep viewer metadata stationary across mixed photo ratios -->
+
+<!-- 2026-07-11 final correction: metadata follows each photo's visible bottom -->
 <style>
 /*
-  가로형/세로형 사진이 서로 바뀌어도 Day·부위·장수 표시는
-  사진의 실제 렌더링 높이를 따라가지 않고 뷰어의 고정 영역에 유지합니다.
-  기존 photoAdjacentMeta 스크립트가 계산한 --viewer-meta-top 값은 사용하지 않습니다.
+  Day/부위/순번은 화면 하단에 고정하지 않습니다.
+  현재 사진의 실제 보이는 하단 바로 아래에 일정한 간격으로 배치합니다.
 */
 #lightbox.unifiedPhotoViewer .viewerMetaWrap{
-  top:auto !important;
-  bottom:max(30px,calc(env(safe-area-inset-bottom) + 22px)) !important;
-  transform:translateX(-50%) !important;
-  transition:none !important;
-  will-change:auto !important;
+  top:var(--viewer-photo-meta-top,50%)!important;
+  bottom:auto!important;
+  transform:translateX(-50%)!important;
+  padding:0!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transition:none!important;
+  will-change:auto!important;
+}
+#lightbox.unifiedPhotoViewer .viewerSlide{
+  padding-top:max(64px,calc(env(safe-area-inset-top) + 56px))!important;
+  padding-bottom:max(70px,calc(env(safe-area-inset-bottom) + 62px))!important;
 }
 #lightbox.unifiedPhotoViewer .lightboxMeta,
 #lightbox.unifiedPhotoViewer .viewerCounter{
-  transform:none !important;
-  transition:none !important;
+  transform:none!important;
+  transition:none!important;
 }
-
-/* 글자 고정 영역과 사진이 겹치지 않도록 모든 사진에 같은 하단 안전영역을 확보합니다. */
-#lightbox.unifiedPhotoViewer .viewerSlide{
-  padding-top:max(64px,calc(env(safe-area-inset-top) + 56px)) !important;
-  padding-bottom:max(112px,calc(env(safe-area-inset-bottom) + 104px)) !important;
-}
-
-/* 한 장 보기의 확대 중 숨김/복원도 위치 이동 없이 즉시 처리합니다. */
-#lightbox.unifiedPhotoViewer.singlePhotoZoomed .viewerMetaWrap,
-#lightbox.unifiedPhotoViewer:not(.singlePhotoZoomed) .viewerMetaWrap{
-  transition:none !important;
+/* 한 장 사진을 확대하는 동안은 사진 외 정보가 전혀 보이지 않습니다. */
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .viewerMetaWrap{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
 }
 </style>
 <script>
-(function lockViewerMetadataPosition(){
+(function keepMetadataImmediatelyBelowVisiblePhoto(){
   const box=document.getElementById('lightbox');
-  if(!box || box.dataset.fixedMetadataPosition==='1') return;
-  box.dataset.fixedMetadataPosition='1';
+  if(!box || box.dataset.visibleBottomMetadata==='1') return;
+  box.dataset.visibleBottomMetadata='1';
 
-  /* 이전 위치 계산값이 남아 있어도 고정 레이아웃만 사용합니다. */
-  const clearCalculatedPosition=()=>{
-    box.style.removeProperty('--viewer-meta-top');
-    const wrap=box.querySelector('.viewerMetaWrap');
-    if(wrap){
-      wrap.style.removeProperty('top');
-      wrap.style.removeProperty('bottom');
-      wrap.style.removeProperty('transform');
-    }
-  };
+  const img=box.querySelector('.currentSlide img');
+  const wrap=box.querySelector('.viewerMetaWrap');
+  const counter=box.querySelector('.viewerCounter');
+  if(!img || !wrap || !counter) return;
 
-  clearCalculatedPosition();
-  new MutationObserver(clearCalculatedPosition).observe(box,{attributes:true,attributeFilter:['style','class']});
-  window.addEventListener('resize',clearCalculatedPosition,{passive:true});
-  window.visualViewport?.addEventListener('resize',clearCalculatedPosition,{passive:true});
+  let raf=0;
+  let resizeObserver=null;
+
+  function totalPhotos(){
+    const match=counter.textContent.trim().match(/^(\d+)\s*\/\s*(\d+)$/);
+    return match?Number(match[2]):1;
+  }
+
+  function placeNow(){
+    cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=>{
+      if(!box.classList.contains('active') || !img.currentSrc && !img.src) return;
+
+      const total=totalPhotos();
+      counter.classList.toggle('singlePhotoCount',total<=1);
+
+      /* 단일 사진 확대 중에는 메타를 숨기므로 확대 transform은 위치 계산에서 제외합니다. */
+      if(box.classList.contains('singlePhotoZoomed')) return;
+
+      const photoRect=img.getBoundingClientRect();
+      if(photoRect.width<1 || photoRect.height<1) return;
+
+      const gap=9;
+      const wrapHeight=Math.max(18,wrap.getBoundingClientRect().height || (total>1?38:18));
+      const safeBottom=Math.max(14,parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom'))||14);
+      const maxTop=Math.max(0,window.innerHeight-wrapHeight-safeBottom);
+      const desired=Math.round(photoRect.bottom+gap);
+
+      box.style.setProperty('--viewer-photo-meta-top',Math.min(maxTop,desired)+'px');
+    });
+  }
+
+  async function placeAfterSourceChange(){
+    try{ if(img.decode) await img.decode(); }catch(_){ }
+    placeNow();
+    requestAnimationFrame(placeNow);
+  }
+
+  img.addEventListener('load',placeAfterSourceChange);
+  new MutationObserver(placeAfterSourceChange).observe(img,{attributes:true,attributeFilter:['src','style','class']});
+  new MutationObserver(placeNow).observe(counter,{childList:true,characterData:true,subtree:true});
+  new MutationObserver(placeNow).observe(box,{attributes:true,attributeFilter:['class']});
+
+  if('ResizeObserver' in window){
+    resizeObserver=new ResizeObserver(placeNow);
+    resizeObserver.observe(img);
+    resizeObserver.observe(wrap);
+  }
+
+  window.addEventListener('resize',placeNow,{passive:true});
+  window.visualViewport?.addEventListener('resize',placeNow,{passive:true});
+  box.addEventListener('touchend',placeNow,{passive:true});
+  box.addEventListener('pointerup',placeNow,{passive:true});
+  placeAfterSourceChange();
 })();
 </script>
