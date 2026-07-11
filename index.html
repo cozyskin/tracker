@@ -4510,9 +4510,9 @@ showPhotoPanel=async function(panel){
     <div class="lightboxContent">
       <div class="viewerViewport">
         <div class="viewerTrack">
-          <div class="viewerSlide prevSlide"><img alt="이전 사진"></div>
-          <div class="viewerSlide currentSlide"><img id="lightboxImg" alt="확대 사진"></div>
-          <div class="viewerSlide nextSlide"><img alt="다음 사진"></div>
+          <div class="viewerSlide prevSlide"><div class="viewerFigure"><img alt="이전 사진"><div class="viewerSlideMeta"><div class="viewerSlideLabel"></div><div class="viewerSlideCounter"></div></div></div></div>
+          <div class="viewerSlide currentSlide"><div class="viewerFigure"><img id="lightboxImg" alt="확대 사진"><div class="viewerSlideMeta"><div class="viewerSlideLabel"></div><div class="viewerSlideCounter"></div></div></div></div>
+          <div class="viewerSlide nextSlide"><div class="viewerFigure"><img alt="다음 사진"><div class="viewerSlideMeta"><div class="viewerSlideLabel"></div><div class="viewerSlideCounter"></div></div></div></div>
         </div>
       </div>
       <div class="viewerMetaWrap"><div class="lightboxMeta" id="lightboxMeta"></div><div class="viewerCounter"></div></div>
@@ -4525,6 +4525,11 @@ showPhotoPanel=async function(panel){
   const track=box.querySelector('.viewerTrack');
   const slides={prev:box.querySelector('.prevSlide'),current:box.querySelector('.currentSlide'),next:box.querySelector('.nextSlide')};
   const images={prev:slides.prev.querySelector('img'),current:slides.current.querySelector('img'),next:slides.next.querySelector('img')};
+  const slideMeta={
+    prev:{label:slides.prev.querySelector('.viewerSlideLabel'),counter:slides.prev.querySelector('.viewerSlideCounter')},
+    current:{label:slides.current.querySelector('.viewerSlideLabel'),counter:slides.current.querySelector('.viewerSlideCounter')},
+    next:{label:slides.next.querySelector('.viewerSlideLabel'),counter:slides.next.querySelector('.viewerSlideCounter')}
+  };
   const meta=box.querySelector('#lightboxMeta');
   const counter=box.querySelector('.viewerCounter');
   const closeBtn=box.querySelector('.closeLightbox');
@@ -4558,8 +4563,21 @@ showPhotoPanel=async function(panel){
   function updateControls(){
     prevBtn.classList.toggle('available',index>0);
     nextBtn.classList.toggle('available',index<items.length-1);
+    box.classList.toggle('singlePhotoViewer',items.length<=1);
     meta.textContent=items[index]?.meta||'';
     counter.textContent=items.length?`${index+1} / ${items.length}`:'';
+
+    const fillSlideMeta=(slot,item,itemIndex)=>{
+      const target=slideMeta[slot];
+      if(!target) return;
+      target.label.textContent=item?.meta||'';
+      target.counter.textContent=items.length>1&&item?`${itemIndex+1} / ${items.length}`:'';
+      target.label.style.visibility=item?'visible':'hidden';
+      target.counter.style.visibility=item&&items.length>1?'visible':'hidden';
+    };
+    fillSlideMeta('prev',items[index-1],index-1);
+    fillSlideMeta('current',items[index],index);
+    fillSlideMeta('next',items[index+1],index+1);
     wakeNav();
   }
   function trackCenter(animated=true){
@@ -5126,5 +5144,48 @@ showPhotoPanel=async function(panel){
   if(wasActive) prepare();
 })();
 </script>
+
+<!-- 2026-07-11 per-slide metadata: prevents caption bounce between short and tall photos -->
+<style>
+/* Each photo owns its own caption. The image and text enter together as one slide,
+   so changing aspect ratio cannot move a shared caption after the transition. */
+#lightbox.unifiedPhotoViewer .viewerMetaWrap{display:none!important;}
+#lightbox.unifiedPhotoViewer .viewerSlide{padding-top:max(64px,calc(env(safe-area-inset-top) + 56px))!important;padding-bottom:max(18px,calc(env(safe-area-inset-bottom) + 14px))!important;}
+#lightbox.unifiedPhotoViewer .viewerFigure{
+  width:100%;height:100%;min-width:0;min-height:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#lightbox.unifiedPhotoViewer .viewerFigure>img{
+  max-width:100%!important;max-height:calc(100% - 47px)!important;
+  width:auto!important;height:auto!important;flex:0 1 auto!important;
+  object-fit:contain!important;
+}
+#lightbox.unifiedPhotoViewer .viewerSlideMeta{
+  flex:0 0 39px;min-height:39px;width:calc(100% - 72px);max-width:420px;
+  margin-top:8px;text-align:center;color:#fff;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  transform:none!important;transition:none!important;
+}
+#lightbox.unifiedPhotoViewer .viewerSlideLabel{
+  width:100%;font-size:14px;font-weight:800;line-height:19px;min-height:19px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 5px rgba(0,0,0,.55);
+}
+#lightbox.unifiedPhotoViewer .viewerSlideCounter{
+  margin-top:3px;font-size:12px;font-weight:800;line-height:16px;min-height:16px;
+  color:rgba(255,255,255,.82);
+}
+/* One-photo view: no 1/1. During zoom, only the photo remains visible. */
+#lightbox.unifiedPhotoViewer.singlePhotoViewer .viewerSlideCounter{display:none!important;}
+#lightbox.unifiedPhotoViewer.singlePhotoViewer.zoomed .currentSlide .viewerSlideMeta,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomed .currentSlide .viewerSlideMeta,
+#lightbox.unifiedPhotoViewer.singlePhotoZoomActive .currentSlide .viewerSlideMeta{
+  visibility:hidden!important;opacity:0!important;
+}
+@media(max-width:380px){
+  #lightbox.unifiedPhotoViewer .viewerSlideMeta{width:calc(100% - 56px);}
+}
+</style>
 </body>
 </html>
