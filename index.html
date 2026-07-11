@@ -1593,6 +1593,84 @@ html{
   pointer-events:none;
 }
 
+
+
+/* 2026-07-11 final usability additions: routine alignment, memo scroll hint, lightbox navigation */
+.dayDetailBox .detailCheck{
+  display:grid !important;
+  grid-template-columns:22px minmax(0,1fr) !important;
+  align-items:center !important;
+  column-gap:8px !important;
+  text-align:left !important;
+}
+.dayDetailBox .detailCheck .routineMark{
+  width:22px !important;
+  min-width:22px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  line-height:1 !important;
+}
+
+.memoHintHost{position:relative;}
+.memoScrollHint{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:34px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding-bottom:2px;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .18s ease,visibility 0s linear .18s;
+  background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,.92) 58%,rgba(255,255,255,1));
+  color:#9ca3af;
+  font-size:15px;
+  font-weight:800;
+  z-index:2;
+}
+.memoScrollHint.show{opacity:.82;visibility:visible;transition-delay:0s;}
+.memoScrollHint span{transform:translateY(1px);}
+
+.lightboxNav{
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  width:38px;height:38px;
+  border:0;border-radius:999px;
+  background:rgba(255,255,255,.18);
+  color:rgba(255,255,255,.88);
+  font-size:30px;
+  line-height:1;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1002;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  box-shadow:0 4px 14px rgba(0,0,0,.12);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.lightboxNav.show{display:flex;}
+.lightboxNav.prev{left:14px;}
+.lightboxNav.next{right:14px;}
+.lightboxCounter{
+  margin-top:5px;
+  font-size:12px;
+  color:rgba(255,255,255,.78);
+  font-weight:800;
+  min-height:18px;
+}
+.lightboxContent{touch-action:pan-y;}
+@media(max-width:380px){
+  .lightboxNav{width:34px;height:34px;font-size:27px;}
+  .lightboxNav.prev{left:9px}.lightboxNav.next{right:9px}
+}
+
 </style>
 </head>
 <body>
@@ -2733,6 +2811,176 @@ showPhotoPanel=async function(panel){
   if(panel!=='timeline') clearTimelineFooterSpacer();
   return originalShowPhotoPanelFinal(panel);
 };
+
+
+
+/* 2026-07-11 isolated usability logic */
+(function(){
+  /* 1) Return to the last completed Day when reopening the Record tab.
+     Home's Today button still opens the next available Day. */
+  const originalShowView=showView;
+  const originalGoRecordToday=goRecordToday;
+  let keepNextDayOnce=false;
+  function lastCompletedDay(){
+    for(let i=14;i>=1;i--) if(isComplete(i)) return i;
+    return 1;
+  }
+  showView=function(id){
+    const enteringRecord=id==='record' && !document.getElementById('record')?.classList.contains('active');
+    if(enteringRecord && !keepNextDayOnce){
+      state.selected=lastCompletedDay();
+    }
+    originalShowView(id);
+    keepNextDayOnce=false;
+  };
+  goRecordToday=function(){
+    keepNextDayOnce=true;
+    state.selected=today();
+    originalShowView('record');
+    keepNextDayOnce=false;
+    loadForm();
+  };
+
+  /* 2) Show a subtle memo-scroll hint only when more records exist below. */
+  function setupMemoScrollHint(){
+    const scroller=document.querySelector('#report .memoScroll');
+    if(!scroller) return;
+    const host=scroller.closest('.guideBox');
+    if(!host) return;
+    host.classList.add('memoHintHost');
+    let hint=host.querySelector('.memoScrollHint');
+    if(!hint){
+      hint=document.createElement('div');
+      hint.className='memoScrollHint';
+      hint.setAttribute('aria-hidden','true');
+      hint.innerHTML='<span>⌄</span>';
+      host.appendChild(hint);
+    }
+    const update=()=>{
+      const overflow=scroller.scrollHeight>scroller.clientHeight+2;
+      const moreBelow=scroller.scrollTop+scroller.clientHeight<scroller.scrollHeight-3;
+      hint.classList.toggle('show',overflow&&moreBelow);
+    };
+    if(!scroller.dataset.hintBound){
+      scroller.addEventListener('scroll',update,{passive:true});
+      scroller.dataset.hintBound='1';
+    }
+    requestAnimationFrame(update);
+  }
+  const originalRenderReport=renderReport;
+  renderReport=function(){
+    originalRenderReport();
+    requestAnimationFrame(setupMemoScrollHint);
+  };
+  window.addEventListener('resize',()=>requestAnimationFrame(setupMemoScrollHint),{passive:true});
+  requestAnimationFrame(setupMemoScrollHint);
+
+  /* 3) One shared same-Day lightbox viewer with arrows, swipe and index. */
+  let lightboxItems=[];
+  let lightboxIndex=0;
+  let touchStartX=0;
+  let touchStartY=0;
+
+  function ensureLightboxControls(){
+    let prev=document.getElementById('lightboxPrev');
+    let next=document.getElementById('lightboxNext');
+    let counter=document.getElementById('lightboxCounter');
+    if(!prev){
+      prev=document.createElement('button');
+      prev.id='lightboxPrev';
+      prev.type='button';
+      prev.className='lightboxNav prev';
+      prev.setAttribute('aria-label','이전 사진');
+      prev.textContent='‹';
+      prev.onclick=e=>{e.stopPropagation();showLightboxIndex(lightboxIndex-1);};
+      lightbox.appendChild(prev);
+    }
+    if(!next){
+      next=document.createElement('button');
+      next.id='lightboxNext';
+      next.type='button';
+      next.className='lightboxNav next';
+      next.setAttribute('aria-label','다음 사진');
+      next.textContent='›';
+      next.onclick=e=>{e.stopPropagation();showLightboxIndex(lightboxIndex+1);};
+      lightbox.appendChild(next);
+    }
+    if(!counter){
+      counter=document.createElement('div');
+      counter.id='lightboxCounter';
+      counter.className='lightboxCounter';
+      lightboxMeta.insertAdjacentElement('afterend',counter);
+    }
+  }
+
+  async function buildSameDayItems(id,meta){
+    const match=String(meta||'').match(/Day\s*(\d+)/i);
+    if(!match) return [{id,meta:meta||''}];
+    const day=Number(match[1]);
+    const photos=getDayPhotos(day);
+    if(!photos.length) return [{id,meta:meta||''}];
+    return photos.map(p=>({id:p.id,meta:`Day ${day} ${p.part||''}`.trim()}));
+  }
+
+  async function showLightboxIndex(index){
+    if(index<0||index>=lightboxItems.length) return;
+    lightboxIndex=index;
+    const item=lightboxItems[index];
+    const src=await safeGetPhoto(item.id);
+    if(!src) return;
+    lightboxImg.src=src;
+    lightboxMeta.textContent=item.meta||'';
+    const prev=document.getElementById('lightboxPrev');
+    const next=document.getElementById('lightboxNext');
+    const counter=document.getElementById('lightboxCounter');
+    const multiple=lightboxItems.length>1;
+    prev?.classList.toggle('show',multiple&&index>0);
+    next?.classList.toggle('show',multiple&&index<lightboxItems.length-1);
+    if(counter) counter.textContent=multiple?`${index+1} / ${lightboxItems.length}`:'';
+  }
+
+  openLightbox=async function(id,meta){
+    ensureLightboxControls();
+    lightboxItems=await buildSameDayItems(id,meta);
+    const found=lightboxItems.findIndex(item=>item.id===id);
+    lightboxIndex=found>=0?found:0;
+    await showLightboxIndex(lightboxIndex);
+    lightbox.classList.add('active');
+  };
+
+  const originalCloseLightbox=closeLightbox;
+  closeLightbox=function(){
+    originalCloseLightbox();
+    lightboxItems=[];
+    lightboxIndex=0;
+    const prev=document.getElementById('lightboxPrev');
+    const next=document.getElementById('lightboxNext');
+    const counter=document.getElementById('lightboxCounter');
+    prev?.classList.remove('show');
+    next?.classList.remove('show');
+    if(counter) counter.textContent='';
+  };
+
+  lightboxContent.addEventListener('touchstart',e=>{
+    const t=e.touches[0];
+    touchStartX=t.clientX; touchStartY=t.clientY;
+  },{passive:true});
+  lightboxContent.addEventListener('touchend',e=>{
+    if(!lightboxItems.length) return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-touchStartX;
+    const dy=t.clientY-touchStartY;
+    if(Math.abs(dx)<42||Math.abs(dx)<=Math.abs(dy)) return;
+    if(dx<0) showLightboxIndex(lightboxIndex+1);
+    else showLightboxIndex(lightboxIndex-1);
+  },{passive:true});
+
+  document.addEventListener('keydown',e=>{
+    if(!lightbox.classList.contains('active')) return;
+    if(e.key==='ArrowLeft') showLightboxIndex(lightboxIndex-1);
+    if(e.key==='ArrowRight') showLightboxIndex(lightboxIndex+1);
+  });
+})();
 
 </script>
 </body>
