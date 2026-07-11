@@ -1671,6 +1671,77 @@ html{
   .lightboxNav.prev{left:9px}.lightboxNav.next{right:9px}
 }
 
+
+
+/* 2026-07-11 final lightbox navigation + memo scrollbar */
+.lightbox{padding:16px!important;}
+.lightboxContent{position:relative;max-width:96vw;max-height:88vh;touch-action:pan-y!important;}
+.lightboxContent img{
+  display:block;
+  -webkit-user-drag:none;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:pan-y!important;
+}
+.lightboxNav{
+  width:52px!important;
+  height:52px!important;
+  border-radius:999px!important;
+  background:rgba(17,24,39,.34)!important;
+  color:rgba(255,255,255,.96)!important;
+  font-size:38px!important;
+  font-weight:400!important;
+  line-height:1!important;
+  z-index:1003!important;
+  top:var(--lightbox-nav-top,50%)!important;
+  transform:translateY(-50%)!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.2)!important;
+  -webkit-tap-highlight-color:transparent!important;
+  touch-action:manipulation!important;
+}
+.lightboxNav.prev{left:var(--lightbox-prev-left,18px)!important;}
+.lightboxNav.next{right:var(--lightbox-next-right,18px)!important;}
+.lightboxNav::before{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:999px;
+}
+.lightboxNav:active{background:rgba(17,24,39,.46)!important;}
+@media(max-width:380px){
+  .lightboxNav{width:48px!important;height:48px!important;font-size:35px!important;}
+}
+
+/* Replace the down-arrow hint with a subtle app-style scroll indicator. */
+.memoScrollHint{display:none!important;}
+.memoScrollRail{
+  position:absolute;
+  top:43px;
+  right:5px;
+  bottom:34px;
+  width:3px;
+  border-radius:999px;
+  background:rgba(124,58,237,.07);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+  z-index:3;
+}
+.memoScrollRail.show{opacity:1;}
+.memoScrollThumb{
+  position:absolute;
+  left:0;
+  top:0;
+  width:3px;
+  min-height:20px;
+  border-radius:999px;
+  background:rgba(124,58,237,.34);
+  transform:translateY(0);
+  transition:opacity .18s ease;
+}
+#report .memoScroll{padding-right:10px!important;scrollbar-width:none!important;}
+#report .memoScroll::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}
+
 </style>
 </head>
 <body>
@@ -2980,6 +3051,125 @@ showPhotoPanel=async function(panel){
     if(e.key==='ArrowLeft') showLightboxIndex(lightboxIndex-1);
     if(e.key==='ArrowRight') showLightboxIndex(lightboxIndex+1);
   });
+})();
+
+
+
+/* 2026-07-11 final interaction stabilization */
+(function(){
+  const lb=document.getElementById('lightbox');
+  const content=document.querySelector('#lightbox .lightboxContent');
+  const img=document.getElementById('lightboxImg');
+  if(lb&&content&&img){
+    /* Close only when the dark backdrop itself is tapped. */
+    lb.onclick=function(event){
+      if(event.target===lb) closeLightbox();
+    };
+    content.onclick=function(event){event.stopPropagation();};
+    img.draggable=false;
+
+    function stopNavEvent(event){
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    function bindNavSafety(){
+      ['lightboxPrev','lightboxNext'].forEach(id=>{
+        const btn=document.getElementById(id);
+        if(!btn||btn.dataset.safeBound) return;
+        ['pointerdown','touchstart','mousedown','click'].forEach(type=>btn.addEventListener(type,stopNavEvent,{passive:false}));
+        btn.dataset.safeBound='1';
+      });
+    }
+    function placeNavInsidePhoto(){
+      if(!lb.classList.contains('active')) return;
+      const r=img.getBoundingClientRect();
+      if(!r.width||!r.height) return;
+      const edge=14;
+      const top=r.top+r.height/2;
+      lb.style.setProperty('--lightbox-nav-top',top+'px');
+      lb.style.setProperty('--lightbox-prev-left',Math.max(10,r.left+edge)+'px');
+      lb.style.setProperty('--lightbox-next-right',Math.max(10,window.innerWidth-r.right+edge)+'px');
+      bindNavSafety();
+    }
+    img.addEventListener('load',()=>requestAnimationFrame(placeNavInsidePhoto));
+    window.addEventListener('resize',()=>requestAnimationFrame(placeNavInsidePhoto),{passive:true});
+
+    const originalOpen=window.openLightbox;
+    if(typeof originalOpen==='function'){
+      window.openLightbox=async function(id,meta){
+        await originalOpen(id,meta);
+        bindNavSafety();
+        requestAnimationFrame(placeNavInsidePhoto);
+      };
+    }
+
+    /* Reliable horizontal swipe across the whole photo display area. */
+    let sx=0,sy=0,tracking=false;
+    content.addEventListener('touchstart',function(event){
+      if(event.touches.length!==1) return;
+      const t=event.touches[0];
+      sx=t.clientX; sy=t.clientY; tracking=true;
+      event.stopImmediatePropagation();
+    },{capture:true,passive:true});
+    content.addEventListener('touchend',function(event){
+      event.stopImmediatePropagation();
+      if(!tracking||!event.changedTouches.length) return;
+      tracking=false;
+      const t=event.changedTouches[0];
+      const dx=t.clientX-sx, dy=t.clientY-sy;
+      if(Math.abs(dx)<45||Math.abs(dx)<=Math.abs(dy)*1.15) return;
+      const btn=dx<0?document.getElementById('lightboxNext'):document.getElementById('lightboxPrev');
+      if(btn&&btn.classList.contains('show')) btn.click();
+    },{capture:true,passive:true});
+  }
+
+  let memoFadeTimer=0;
+  function installMemoScrollbar(){
+    const scroller=document.querySelector('#report .memoScroll');
+    if(!scroller) return;
+    const host=scroller.closest('.guideBox');
+    if(!host) return;
+    host.classList.add('memoHintHost');
+    host.querySelector('.memoScrollHint')?.remove();
+    let rail=host.querySelector('.memoScrollRail');
+    if(!rail){
+      rail=document.createElement('div');
+      rail.className='memoScrollRail';
+      rail.setAttribute('aria-hidden','true');
+      rail.innerHTML='<span class="memoScrollThumb"></span>';
+      host.appendChild(rail);
+    }
+    const thumb=rail.querySelector('.memoScrollThumb');
+    const update=(hold=false)=>{
+      const max=scroller.scrollHeight-scroller.clientHeight;
+      if(max<=2){rail.classList.remove('show');return;}
+      const railH=rail.clientHeight||80;
+      const thumbH=Math.max(20,Math.round(railH*(scroller.clientHeight/scroller.scrollHeight)));
+      const travel=Math.max(0,railH-thumbH);
+      const y=max?Math.round((scroller.scrollTop/max)*travel):0;
+      thumb.style.height=thumbH+'px';
+      thumb.style.transform=`translateY(${y}px)`;
+      rail.classList.add('show');
+      clearTimeout(memoFadeTimer);
+      if(!hold) memoFadeTimer=setTimeout(()=>rail.classList.remove('show'),1100);
+    };
+    if(!scroller.dataset.railBound){
+      scroller.addEventListener('scroll',()=>update(false),{passive:true});
+      scroller.addEventListener('touchstart',()=>update(true),{passive:true});
+      scroller.addEventListener('touchend',()=>update(false),{passive:true});
+      scroller.dataset.railBound='1';
+    }
+    requestAnimationFrame(()=>update(false));
+  }
+  const previousRenderReport=window.renderReport;
+  if(typeof previousRenderReport==='function'){
+    window.renderReport=function(){
+      previousRenderReport();
+      requestAnimationFrame(installMemoScrollbar);
+    };
+  }
+  window.addEventListener('resize',()=>requestAnimationFrame(installMemoScrollbar),{passive:true});
+  requestAnimationFrame(installMemoScrollbar);
 })();
 
 </script>
