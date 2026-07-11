@@ -5212,5 +5212,69 @@ showPhotoPanel=async function(panel){
   border-radius:0!important;
 }
 </style>
+
+<!-- 2026-07-11 My Records compact height + overflow-only purple indicator -->
+<style>
+/* Keep My Records compact: four complete rows, no half-cut line. */
+#report .memoScroll{
+  max-height:104px!important;
+  height:auto!important;
+  overflow-y:auto!important;
+  padding-right:11px!important;
+  scrollbar-width:none!important;
+}
+#report .memoScroll::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}
+#report .memoScrollHint,
+#report .memoScrollRail{display:none!important;}
+/* Show the custom indicator only when JavaScript adds .show because content overflows. */
+#report .memoScrollRailFinal{
+  display:block!important;
+  position:absolute!important;
+  right:6px!important;
+  top:0;
+  bottom:auto!important;
+  width:3px!important;
+  height:104px;
+  border-radius:999px!important;
+  background:rgba(124,58,237,.07)!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  z-index:5!important;
+  transition:opacity .18s ease,visibility 0s linear .18s!important;
+}
+#report .memoScrollRailFinal.show{
+  opacity:1!important;
+  visibility:visible!important;
+  transition-delay:0s!important;
+}
+#report .memoScrollThumbFinal{
+  width:3px!important;
+  min-height:18px!important;
+  border-radius:999px!important;
+  background:rgba(124,58,237,.38)!important;
+}
+@media(max-width:380px){
+  #report .memoScroll{max-height:104px!important;}
+}
+</style>
+<script>
+(function alignMyRecordsIndicator(){
+  function align(){
+    const scroller=document.querySelector('#report .memoScroll');
+    const rail=document.querySelector('#report .memoScrollRailFinal');
+    const host=scroller?.closest('.guideBox');
+    if(!scroller||!rail||!host) return;
+    rail.style.top=scroller.offsetTop+'px';
+    rail.style.height=scroller.clientHeight+'px';
+    const overflow=scroller.scrollHeight>scroller.clientHeight+2;
+    rail.classList.toggle('show',overflow);
+  }
+  requestAnimationFrame(align);
+  window.addEventListener('resize',()=>requestAnimationFrame(align),{passive:true});
+  const report=document.getElementById('report');
+  if(report) new MutationObserver(()=>requestAnimationFrame(align)).observe(report,{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
